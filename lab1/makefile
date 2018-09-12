@@ -50,12 +50,12 @@ build: $(PROJECT)
 $(PROJECT): $(OBJECTS)
 	@mkdir -p $(dir $@)
 	@echo $(LDPRINT)
-	@$(CC) -o $@ $(OBJECTS)
+	@$(CXX) -o $@ $(OBJECTS)
 
 $(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.cpp
 	@mkdir -p $(dir $@)
 	@echo $(CCPRINT)
-	@$(CC) -c $(CFLAGS) $< -o $@
+	@$(CXX) -c $(CFLAGS) $< -o $@
 
 clean:
 	@rm -rf $(BUILD_DIR)
