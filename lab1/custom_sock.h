@@ -24,7 +24,7 @@ typedef SOCKET custom_sock_t;
 
 #else
 
-#error Platform is not supported. Edit "custom_sock.h" file for adding more support
+#error Platform is not supported. Edit "custom_sock.h" file for adding more supported platrofms
 
 #endif
 
