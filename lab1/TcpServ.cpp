@@ -1,6 +1,7 @@
 ﻿#include "TcpServ.h"
 
 #include <cstdio>
+#include <string.h>
 #include "config.h"
 #include "custom_lib.h"
 
@@ -27,7 +28,7 @@ void TcpServ_Init(TcpServ_t* h)
 {
 	if (h)
 	{
-		memset(h, 0, sizeof(TcpServ_t));
+		ZeroMemory_custom(h, sizeof(TcpServ_t));
 		//TODO: other required init
 	}
 }
@@ -42,7 +43,7 @@ bool TcpServ_Start(TcpServ_t* h, sock_type_t sock_type, uint16_t port)
 	char port_buff[PORT_STRING_SIZE] = "";
 	custom_sock_t listen_socket = CUSTOM_SOCK_INVALID;
 
-	ZeroMemory(&hints, sizeof(hints));
+	ZeroMemory_custom(&hints, sizeof(hints));
     hints.ai_family = AF_INET;
 	switch (sock_type)
 	{

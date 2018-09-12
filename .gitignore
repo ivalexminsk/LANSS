@@ -363,3 +363,7 @@ ASALocalRun/
 
 # Local History for Visual Studio
 .localhistory/
+
+# Linux custom makefile excludings
+out
+build

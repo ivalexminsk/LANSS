@@ -22,6 +22,32 @@ typedef SOCKET custom_sock_t;
 #define CUSTOM_SOCK_ERROR_CODE WSAGetLastError()
 #define CUSTOM_SOCK_INVALID INVALID_SOCKET
 
+#elif defined (__linux__) || defined(__unix__)
+
+/* Headers */
+#include <errno.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
+/* Typedefs */
+typedef int custom_sock_t;
+
+/* Defines */
+#define CUSTOM_SOCK_ERROR_CODE errno
+#define CUSTOM_SOCK_INVALID (-1)
+#define SOCKET_ERROR (-1)
+
+/* shutdown() ports */
+#define SD_RECEIVE					SHUT_RD
+#define SD_SEND						SHUT_WR
+#define SD_BOTH						SHUT_RDWR
+
+/* close socket fix */
+#define closesocket close
+
 #else
 
 #error Platform is not supported. Edit "custom_sock.h" file for adding more supported platrofms

@@ -11,7 +11,7 @@ void my_callback (custom_sock_t s)
 {
 	int iResult;
 
-    SOCKET ClientSocket = s;
+    custom_sock_t ClientSocket = s;
 
     int iSendResult;
     char recvbuf[DEFAULT_BUFLEN];
@@ -27,7 +27,7 @@ void my_callback (custom_sock_t s)
         // Echo the buffer back to the sender
             iSendResult = send( ClientSocket, recvbuf, iResult, 0 );
             if (iSendResult == SOCKET_ERROR) {
-                printf("send failed with error: %d\n", WSAGetLastError());
+                fprintf(stderr, "send failed with error: %d\n", CUSTOM_SOCK_ERROR_CODE);
                 return;
             }
             printf("Bytes sent: %d\n", iSendResult);
@@ -35,7 +35,7 @@ void my_callback (custom_sock_t s)
         else if (iResult == 0)
             printf("Connection closing...\n");
         else  {
-            printf("recv failed with error: %d\n", WSAGetLastError());
+            fprintf(stderr, "recv failed with error: %d\n", CUSTOM_SOCK_ERROR_CODE);
             return;
         }
 
