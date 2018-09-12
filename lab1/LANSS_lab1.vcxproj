@@ -116,12 +116,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="sock_thread_handler.cpp" />
     <ClCompile Include="TcpServ.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="config.h" />
     <ClInclude Include="custom_lib.h" />
     <ClInclude Include="custom_sock.h" />
+    <ClInclude Include="sock_thread_handler.h" />
     <ClInclude Include="TcpServ.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

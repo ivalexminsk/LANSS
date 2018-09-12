@@ -104,13 +104,18 @@ void TcpServ_WaitConnection(TcpServ_t* h, ready_message_callback_t callback)
 {
 	if (!h || !callback) return;
 
+	printf("Client waiting...\n");
 	custom_sock_t client_socket = accept(h->serv_sock, nullptr, nullptr);
     if (client_socket == CUSTOM_SOCK_INVALID) {
         fprintf(stderr, "accept failed with error: %d\n", CUSTOM_SOCK_ERROR_CODE);
     }
 
+	printf("Client connected\n");
+
 	// call user callback
 	callback(client_socket);
+
+	printf("Client disconnecting...\n");
 
 	// shutdown the connection since we're done
     int res = shutdown(client_socket, SD_BOTH);
@@ -120,6 +125,8 @@ void TcpServ_WaitConnection(TcpServ_t* h, ready_message_callback_t callback)
 
 	// cleanup
 	closesocket(client_socket);
+
+	printf("Client disconnected\n");
 }
 
 void TcpServ_Stop(TcpServ_t* h)

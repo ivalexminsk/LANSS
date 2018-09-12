@@ -13,7 +13,7 @@ OUT_DIR 		= out
 SOURCE          = 
 SOURCE          += main.cpp
 SOURCE          += TcpServ.cpp
-
+SOURCE          += sock_thread_handler.cpp
 
 ################################
 ##        Flags config

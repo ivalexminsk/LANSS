@@ -367,3 +367,5 @@ ASALocalRun/
 # Linux custom makefile excludings
 out
 build
+.vscode
+.vs
