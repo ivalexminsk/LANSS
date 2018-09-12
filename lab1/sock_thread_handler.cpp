@@ -95,11 +95,13 @@ void execute_command(custom_sock_t s, server_command_t c, std::string& params)
 		res = execute_disconnect(s, params);
         break;
     case server_command_upload:
+		res = execute_upload(s, params);
         break;
     case server_command_download:
+		res = execute_download(s, params);
         break;
     case server_command_none:
-    default: 
+    default:
         break;
     }
 
@@ -120,9 +122,14 @@ void execute_command(custom_sock_t s, server_command_t c, std::string& params)
     }
 }
 
+std::string append_newline(std::string& s)
+{
+	return (s + SOCKET_COMMAND_DELIMITER_0 + SOCKET_COMMAND_DELIMITER_1);
+}
+
 std::string execute_echo(custom_sock_t s, std::string& params)
 {
-	return (params + SOCKET_COMMAND_DELIMITER_0 + SOCKET_COMMAND_DELIMITER_1);
+	return append_newline(params);
 }
 
 std::string execute_time(custom_sock_t s, std::string& params)
@@ -130,12 +137,26 @@ std::string execute_time(custom_sock_t s, std::string& params)
     // current date/time based on current system
     time_t result = time(nullptr);
 	char* time_res = asctime(gmtime(&result));
-
-	return std::string(std::string(time_res) + SOCKET_COMMAND_DELIMITER_0 + SOCKET_COMMAND_DELIMITER_1);
+	std::string time_string(time_res);
+	return std::string(append_newline(time_string));
 }
 
 std::string execute_disconnect(custom_sock_t s, std::string& params)
 {
 	//see sock_thread_callback implementation
 	return std::string();
+}
+
+std::string execute_upload(custom_sock_t s, std::string& params)
+{
+	//TODO:
+	std::string temp("TODO: upload");
+	return append_newline(temp);
+}
+
+std::string execute_download(custom_sock_t s, std::string& params)
+{
+	//TODO:
+	std::string temp("TODO: download");
+	return append_newline(temp);
 }

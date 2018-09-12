@@ -31,3 +31,5 @@ void execute_command(custom_sock_t s, server_command_t c, std::string& params);
 std::string execute_echo(custom_sock_t s, std::string& params);
 std::string execute_time(custom_sock_t s, std::string& params);
 std::string execute_disconnect(custom_sock_t s, std::string& params);
+std::string execute_upload(custom_sock_t s, std::string& params);
+std::string execute_download(custom_sock_t s, std::string& params);
