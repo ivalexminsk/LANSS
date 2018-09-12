@@ -51,7 +51,10 @@ int main()
 	TcpServ_Init(&serv);
 	if (TcpServ_Start(&serv, sock_tcp, DEFAULT_PORT))
 	{
-		TcpServ_WaitConnection(&serv, my_callback);
+		while (true)
+		{
+			TcpServ_WaitConnection(&serv, my_callback);
+		}
 		TcpServ_Stop(&serv);
 	}
 
