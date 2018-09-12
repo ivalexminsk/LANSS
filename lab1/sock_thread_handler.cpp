@@ -33,6 +33,12 @@ void sock_thread_callback(custom_sock_t s)
                 execute_command(s, command, recv_buff);
 
                 recv_buff.clear();
+
+                if (command == server_command_disconnect)
+                {
+                    /* For disconnecting */
+                    result = 0;
+                }
             }
             else
             {
@@ -130,6 +136,6 @@ std::string execute_time(custom_sock_t s, std::string& params)
 
 std::string execute_disconnect(custom_sock_t s, std::string& params)
 {
-	//TODO:
+	//see sock_thread_callback implementation
 	return std::string();
 }
