@@ -21,15 +21,18 @@
     <ClCompile Include="TcpServ.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="custom_sock.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TcpServ.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="custom_sock.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="custom_lib.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

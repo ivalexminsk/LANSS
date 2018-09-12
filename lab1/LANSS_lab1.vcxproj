@@ -115,11 +115,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="custom_sock.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="TcpServ.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="config.h" />
+    <ClInclude Include="custom_lib.h" />
     <ClInclude Include="custom_sock.h" />
     <ClInclude Include="TcpServ.h" />
   </ItemGroup>

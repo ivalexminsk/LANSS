@@ -18,10 +18,19 @@
 /* Typedefs */
 typedef SOCKET custom_sock_t;
 
+/* Defines */
+#define CUSTOM_SOCK_ERROR_CODE WSAGetLastError()
+#define CUSTOM_SOCK_INVALID INVALID_SOCKET
+
 #else
 
 #error Platform is not supported. Edit "custom_sock.h" file for adding more support
 
 #endif
 
-extern const custom_sock_t custom_sock_invalid;
+typedef enum sock_type_t
+{
+	sock_none = 0,		/* Default error value */
+	sock_tcp,
+	sock_udp,
+} sock_type_t;
