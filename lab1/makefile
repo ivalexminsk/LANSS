@@ -14,6 +14,7 @@ SOURCE          =
 SOURCE          += main.cpp
 SOURCE          += TcpServ.cpp
 SOURCE          += sock_thread_handler.cpp
+SOURCE          += file_manage.cpp
 
 ################################
 ##        Flags config

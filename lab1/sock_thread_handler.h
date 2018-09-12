@@ -12,10 +12,12 @@ typedef enum server_command_t
     server_command_disconnect,
     server_command_upload,
     server_command_download,
+    server_command_upload_continue,
+    server_command_download_continue,
 } server_command_t;
 
 #define SERVER_COMMAND_FIRST server_command_none
-#define SERVER_COMMAND_LAST server_command_download
+#define SERVER_COMMAND_LAST server_command_download_continue
 
 void sock_thread_callback(custom_sock_t s);
 
@@ -31,5 +33,3 @@ void execute_command(custom_sock_t s, server_command_t c, std::string& params);
 std::string execute_echo(custom_sock_t s, std::string& params);
 std::string execute_time(custom_sock_t s, std::string& params);
 std::string execute_disconnect(custom_sock_t s, std::string& params);
-std::string execute_upload(custom_sock_t s, std::string& params);
-std::string execute_download(custom_sock_t s, std::string& params);

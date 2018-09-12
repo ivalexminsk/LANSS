@@ -114,6 +114,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="file_manage.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="sock_thread_handler.cpp" />
     <ClCompile Include="TcpServ.cpp" />
@@ -122,6 +123,7 @@
     <ClInclude Include="config.h" />
     <ClInclude Include="custom_lib.h" />
     <ClInclude Include="custom_sock.h" />
+    <ClInclude Include="file_manage.h" />
     <ClInclude Include="sock_thread_handler.h" />
     <ClInclude Include="TcpServ.h" />
   </ItemGroup>

@@ -5,6 +5,7 @@
 #include <time.h>
 
 #include "config.h"
+#include "file_manage.h"
 
 const char* server_command_converter[] = 
 {
@@ -14,6 +15,8 @@ const char* server_command_converter[] =
     "DISCONNECT",
     "UPLOAD",
     "DOWNLOAD",
+    "UPLOAD_CONTINUE",
+    "DOWNLOAD_CONTINUE",
 };
 
 void sock_thread_callback(custom_sock_t s)
@@ -100,8 +103,14 @@ void execute_command(custom_sock_t s, server_command_t c, std::string& params)
     case server_command_download:
 		res = execute_download(s, params);
         break;
+    case server_command_upload_continue:
+        res = execute_continue_upload(s, params);
+        break;
+	case server_command_download_continue:
+        res = execute_continue_download(s, params);
+        break;
     case server_command_none:
-    default:
+	default:
         break;
     }
 
@@ -122,11 +131,6 @@ void execute_command(custom_sock_t s, server_command_t c, std::string& params)
     }
 }
 
-std::string append_newline(std::string& s)
-{
-	return (s + SOCKET_COMMAND_DELIMITER_0 + SOCKET_COMMAND_DELIMITER_1);
-}
-
 std::string execute_echo(custom_sock_t s, std::string& params)
 {
 	return append_newline(params);
@@ -138,25 +142,11 @@ std::string execute_time(custom_sock_t s, std::string& params)
     time_t result = time(nullptr);
 	char* time_res = asctime(gmtime(&result));
 	std::string time_string(time_res);
-	return std::string(append_newline(time_string));
+	return append_newline(time_string);
 }
 
 std::string execute_disconnect(custom_sock_t s, std::string& params)
 {
 	//see sock_thread_callback implementation
 	return std::string();
-}
-
-std::string execute_upload(custom_sock_t s, std::string& params)
-{
-	//TODO:
-	std::string temp("TODO: upload");
-	return append_newline(temp);
-}
-
-std::string execute_download(custom_sock_t s, std::string& params)
-{
-	//TODO:
-	std::string temp("TODO: download");
-	return append_newline(temp);
 }
