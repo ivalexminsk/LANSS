@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <time.h>
 
 #include "config.h"
 
@@ -26,8 +27,6 @@ void sock_thread_callback(custom_sock_t s)
         result = recv(s, &recv_byte, sizeof(recv_byte), 0);
         if (result > 0) 
         {
-            printf("Bytes received: %d\n", result);
-
             if (recv_byte == SOCKET_COMMAND_DELIMITER_0 || recv_byte == SOCKET_COMMAND_DELIMITER_1)
             {
                 server_command_t command = parse_command(recv_buff);
@@ -117,14 +116,16 @@ void execute_command(custom_sock_t s, server_command_t c, std::string& params)
 
 std::string execute_echo(custom_sock_t s, std::string& params)
 {
-	//TODO:
-	return std::string();
+	return (params + SOCKET_COMMAND_DELIMITER_0 + SOCKET_COMMAND_DELIMITER_1);
 }
 
 std::string execute_time(custom_sock_t s, std::string& params)
 {
-	//TODO:
-	return std::string();
+    // current date/time based on current system
+    time_t result = time(nullptr);
+	char* time_res = asctime(gmtime(&result));
+
+	return std::string(std::string(time_res) + SOCKET_COMMAND_DELIMITER_0 + SOCKET_COMMAND_DELIMITER_1);
 }
 
 std::string execute_disconnect(custom_sock_t s, std::string& params)
