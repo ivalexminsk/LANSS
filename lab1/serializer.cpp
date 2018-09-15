@@ -1,20 +1,5 @@
 #include "serializer.h"
 
-#include <bitsery/bitsery.h>
-#include <bitsery/adapter/buffer.h>
-#include <bitsery/traits/vector.h>
-#include <bitsery/traits/string.h>
-
-using namespace bitsery;
-
-using Buffer = std::vector<uint8_t>;
-using OutputAdapter = OutputBufferAdapter<Buffer>;
-using InputAdapter = InputBufferAdapter<Buffer>;
-
-using Buffer = std::vector<uint8_t>;
-using OutputAdapter = OutputBufferAdapter<Buffer>;
-using InputAdapter = InputBufferAdapter<Buffer>;
-
 #if 0
 struct MyStruct {
     uint32_t i;
@@ -44,3 +29,15 @@ void example()
 }
 
 #endif
+
+size_t payload_struct_serialize(send_recv_payload_t& info, Buffer& buff)
+{
+	buff.clear();
+	return quickSerialization<OutputAdapter>(buff, info);
+}
+
+bool payload_struct_deserialize(send_recv_payload_t& info, Buffer& buff, size_t buff_size)
+{
+	const auto state = quickDeserialization<InputAdapter>({buff.begin(), buff_size}, info);
+	return (state.first == ReaderError::NoError && state.second);
+}
