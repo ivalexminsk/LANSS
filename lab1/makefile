@@ -1,17 +1,22 @@
 ################################
 ##        Program config
 ################################
-PROJECT_NAME    = LANSS_lab1
+PROJECT_NAME_CLIENT = LANSS_lab1_client
+PROJECT_NAME_SERVER = LANSS_lab1_server
 BUILD_DIR 		= build
 SOURCE_DIR 		= .
-INC_DIR 		= ../bitsery/include/
+INC_DIR 		= . ../bitsery/include/
 OUT_DIR 		= out
 
 ################################
 ##        Source config
 ################################
 SOURCE          = 
-SOURCE          += main.cpp
+SOURCE_CLIENT	=
+SOURCE_SERVER	=
+
+SOURCE_CLIENT   += main_client.cpp
+SOURCE_SERVER   += main.cpp
 SOURCE          += TcpServ.cpp
 SOURCE          += sock_thread_handler.cpp
 SOURCE          += file_manage.cpp
@@ -33,9 +38,13 @@ CCPRINT         = "Build  $<"
 ################################
 ##        Auto config
 ################################
-OBJECTS         = $(addprefix $(BUILD_DIR)/, $(SOURCE:.cpp=.o))
-CFLAGS          += -I $(INC_DIR)
-PROJECT			= $(OUT_DIR)/$(PROJECT_NAME)
+ALL_SRC_CLIENT  = $(SOURCE) $(SOURCE_CLIENT)
+ALL_SRC_SERVER  = $(SOURCE) $(SOURCE_SERVER)
+OBJECTS_CLIENT  = $(addprefix $(BUILD_DIR)/, $(ALL_SRC_CLIENT:.cpp=.o))
+OBJECTS_SERVER  = $(addprefix $(BUILD_DIR)/, $(ALL_SRC_SERVER:.cpp=.o))
+CFLAGS          += $(addprefix -I, $(INC_DIR))
+PROJECT_CLIENT  = $(OUT_DIR)/$(PROJECT_NAME_CLIENT)
+PROJECT_SERVER  = $(OUT_DIR)/$(PROJECT_NAME_SERVER)
 
 ################################
 ##        Make config
@@ -47,12 +56,17 @@ PROJECT			= $(OUT_DIR)/$(PROJECT_NAME)
 ################################
 all: clean build
 
-build: $(PROJECT)
+build: $(PROJECT_SERVER) $(PROJECT_CLIENT)
 
-$(PROJECT): $(OBJECTS)
+$(PROJECT_SERVER): $(OBJECTS_SERVER)
 	@mkdir -p $(dir $@)
 	@echo $(LDPRINT)
-	@$(CXX) -o $@ $(OBJECTS)
+	@$(CXX) -o $@ $(OBJECTS_SERVER)
+
+$(PROJECT_CLIENT): $(OBJECTS_CLIENT)
+	@mkdir -p $(dir $@)
+	@echo $(LDPRINT)
+	@$(CXX) -o $@ $(OBJECTS_CLIENT)
 
 $(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.cpp
 	@mkdir -p $(dir $@)
@@ -63,5 +77,8 @@ clean:
 	@rm -rf $(BUILD_DIR)
 	@rm -rf $(OUT_DIR)
 
-run:
-	@$(PROJECT)
+run_client:
+	@$(PROJECT_CLIENT)
+
+run_server:
+	@$(PROJECT_SERVER)

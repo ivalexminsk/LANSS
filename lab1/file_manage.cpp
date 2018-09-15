@@ -158,7 +158,7 @@ bool file_write(file_session_t& session, send_recv_payload_t& to_recv)
 		to_recv.payload.size(), session.handle);
 	if (were_write != to_recv.payload.size())
 	{
-		fprintf(stderr, "Were written %llu bytes instead of %llu\r\n", were_write, to_recv.payload.size());
+		fprintf(stderr, "Were written %lu bytes instead of %lu\r\n", were_write, to_recv.payload.size());
 		return false;
 	}
 
