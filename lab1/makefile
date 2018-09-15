@@ -4,7 +4,7 @@
 PROJECT_NAME    = LANSS_lab1
 BUILD_DIR 		= build
 SOURCE_DIR 		= .
-INC_DIR 		= .
+INC_DIR 		= ../bitsery/include/
 OUT_DIR 		= out
 
 ################################
@@ -15,6 +15,7 @@ SOURCE          += main.cpp
 SOURCE          += TcpServ.cpp
 SOURCE          += sock_thread_handler.cpp
 SOURCE          += file_manage.cpp
+SOURCE          += serializer.cpp
 
 ################################
 ##        Flags config
