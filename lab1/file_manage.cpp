@@ -24,6 +24,8 @@ std::string execute_download(custom_sock_t s, std::string& params)
 		return append_newline(res);
 	}
 
+	std::vector<uint8_t> send_buff;
+
 	do
 	{
 		if (!file_read(session, to_send))
@@ -31,6 +33,10 @@ std::string execute_download(custom_sock_t s, std::string& params)
 			res = "Error reading";
 			break;
 		}
+
+		UPLOAD_DOWNLOAD_SIZE_TYPE send_size = (UPLOAD_DOWNLOAD_SIZE_TYPE)payload_struct_serialize(to_send, send_buff);
+		send(s, (const char*)&send_size, sizeof(send_size), 0);
+		send(s, (const char*)send_buff.data(), send_size, 0);
 		//TODO:
 	} while (!(to_send.is_last));
 
