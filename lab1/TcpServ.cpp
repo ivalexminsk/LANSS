@@ -7,21 +7,12 @@
 
 void TcpServ_GlobalInit()
 {
-#ifdef _WIN32
-	WSADATA wsa_data;
-
-	const int res = WSAStartup(MAKEWORD(2,2), &wsa_data);
-    if (res != 0) {
-        fprintf(stderr, "WSAStartup failed with error: %d\n", res);
-    }
-#endif
+	Socket_GlobalInit();
 }
 
 void TcpServ_GlobalDeInit()
 {
-#ifdef _WIN32
-	WSACleanup();
-#endif
+	Socket_GlobalDeInit();
 }
 
 void TcpServ_Init(TcpServ_t* h)

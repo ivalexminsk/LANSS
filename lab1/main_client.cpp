@@ -1,16 +1,14 @@
-#define WIN32_LEAN_AND_MEAN
-
-#include "custom_sock.h"
-
 #include <stdlib.h>
 #include <stdio.h>
+
+#include "custom_sock.h"
+#include "TcpClient.h"
 
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_PORT "27015"
 
 int __cdecl main(int argc, char **argv) 
 {
-    WSADATA wsaData;
     SOCKET ConnectSocket = INVALID_SOCKET;
     struct addrinfo *result = NULL,
                     *ptr = NULL,
@@ -21,12 +19,7 @@ int __cdecl main(int argc, char **argv)
     int iResult;
     int recvbuflen = DEFAULT_BUFLEN;
     
-    // Initialize Winsock
-    iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
-    if (iResult != 0) {
-        printf("WSAStartup failed with error: %d\n", iResult);
-        return 1;
-    }
+    TcpClient_GlobalInit();
 
     ZeroMemory( &hints, sizeof(hints) );
     hints.ai_family = AF_UNSPEC;
@@ -106,7 +99,7 @@ int __cdecl main(int argc, char **argv)
 
     // cleanup
     closesocket(ConnectSocket);
-    WSACleanup();
+    TcpClient_GlobalDeInit();
 
     return 0;
 }

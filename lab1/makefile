@@ -17,7 +17,8 @@ SOURCE_SERVER	=
 
 SOURCE_CLIENT   += main_client.cpp
 SOURCE_SERVER   += main.cpp
-SOURCE          += TcpServ.cpp
+SOURCE_CLIENT   += TcpClient.cpp
+SOURCE_SERVER   += TcpServ.cpp
 SOURCE          += sock_thread_handler.cpp
 SOURCE          += file_manage.cpp
 SOURCE          += serializer.cpp

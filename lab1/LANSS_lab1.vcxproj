@@ -118,6 +118,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="custom_sock.cpp" />
     <ClCompile Include="file_manage.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="serializer.cpp" />

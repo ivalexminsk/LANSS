@@ -61,3 +61,6 @@ typedef enum sock_type_t
 	sock_tcp,
 	sock_udp,
 } sock_type_t;
+
+void Socket_GlobalInit();
+void Socket_GlobalDeInit();
