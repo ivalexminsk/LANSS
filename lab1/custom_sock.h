@@ -1,5 +1,8 @@
 #pragma once
 
+#include <stdint.h>
+#include <stdbool.h>
+
 #ifdef _WIN32
 /* Windows full support */
 
@@ -66,3 +69,4 @@ typedef void (*ready_message_callback_t) (custom_sock_t s);
 
 void Socket_GlobalInit();
 void Socket_GlobalDeInit();
+custom_sock_t Socket_Start(sock_type_t sock_type, char* server_name, uint16_t port, bool is_server_socket);
