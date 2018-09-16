@@ -63,8 +63,8 @@ bool TcpClient_Start(TcpClient_t* h, sock_type_t sock_type, char* server_name, u
 
         // Create a SOCKET for connecting to server
         connect_socket = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
-        if (connect_socket == INVALID_SOCKET) {
-            fprintf(stderr, "socket failed with error: %ld\n", CUSTOM_SOCK_ERROR_CODE);
+        if (connect_socket == CUSTOM_SOCK_INVALID) {
+            fprintf(stderr, "socket failed with error: %d\n", CUSTOM_SOCK_ERROR_CODE);
             return false;
         }
 
@@ -72,7 +72,7 @@ bool TcpClient_Start(TcpClient_t* h, sock_type_t sock_type, char* server_name, u
         res = connect( connect_socket, ptr->ai_addr, (int)ptr->ai_addrlen);
         if (res == SOCKET_ERROR) {
             closesocket(connect_socket);
-            connect_socket = INVALID_SOCKET;
+            connect_socket = CUSTOM_SOCK_INVALID;
             continue;
         }
         break;
@@ -80,7 +80,7 @@ bool TcpClient_Start(TcpClient_t* h, sock_type_t sock_type, char* server_name, u
 
     freeaddrinfo(result);
 
-    if (connect_socket == INVALID_SOCKET) {
+    if (connect_socket == CUSTOM_SOCK_INVALID) {
         fprintf(stderr, "Unable to connect to server!\n");
         return false;
     }
