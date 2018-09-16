@@ -14,4 +14,5 @@ void TcpClient_GlobalDeInit();
 
 void TcpClient_Init(TcpClient_t* h);
 bool TcpClient_Start(TcpClient_t* h, sock_type_t sock_type, char* server_name, uint16_t port);
+void TcpClient_Communicate(TcpClient_t* h, ready_message_callback_t callback);
 void TcpClient_Stop(TcpClient_t* h);

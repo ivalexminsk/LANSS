@@ -150,3 +150,40 @@ std::string execute_disconnect(custom_sock_t s, std::string& params)
 	//see sock_thread_callback implementation
 	return std::string();
 }
+
+void sock_client_callback(custom_sock_t s)
+{
+    std::string res = "TIME\r\nDISCONNECT\r\n";
+    if (res.length())
+    {
+        // Echo the buffer back to the sender
+#ifdef _WIN32
+		const int len = (int)res.length();
+#else
+		const size_t len = res.length();
+#endif
+
+        int send_result = send( s, res.c_str(), len, 0 );
+        if (send_result == SOCKET_ERROR) {
+            fprintf(stderr, "send failed with error: %d\n", CUSTOM_SOCK_ERROR_CODE);
+            return;
+        }
+    }
+
+    int result;
+    char recv_byte;
+
+	// Receive until the peer shuts down the connection
+    do {
+        result = recv(s, &recv_byte, sizeof(recv_byte), 0);
+        if (result > 0) 
+        {
+            printf("%c", recv_byte);
+        }
+        else if (result < 0)
+        {
+            fprintf(stderr, "recv failed with error: %d\n", CUSTOM_SOCK_ERROR_CODE);
+            return;
+        }
+    } while (result > 0);
+}

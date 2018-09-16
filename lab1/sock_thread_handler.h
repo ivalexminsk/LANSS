@@ -20,6 +20,7 @@ typedef enum server_command_t
 #define SERVER_COMMAND_LAST server_command_download_continue
 
 void sock_thread_callback(custom_sock_t s);
+void sock_client_callback(custom_sock_t s);
 
 /**
  * @brief Parse command from string buffer & remove command if it was found

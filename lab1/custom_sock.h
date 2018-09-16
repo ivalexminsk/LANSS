@@ -62,5 +62,7 @@ typedef enum sock_type_t
 	sock_udp,
 } sock_type_t;
 
+typedef void (*ready_message_callback_t) (custom_sock_t s);
+
 void Socket_GlobalInit();
 void Socket_GlobalDeInit();

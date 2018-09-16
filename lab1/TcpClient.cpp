@@ -85,7 +85,17 @@ bool TcpClient_Start(TcpClient_t* h, sock_type_t sock_type, char* server_name, u
         return false;
     }
 
+    h->sock = connect_socket;
+
 	return true;
+}
+
+void TcpClient_Communicate(TcpClient_t* h, ready_message_callback_t callback)
+{
+    if(h && h->sock != CUSTOM_SOCK_INVALID)
+    {
+        callback(h->sock);
+    }
 }
 
 void TcpClient_Stop(TcpClient_t* h)

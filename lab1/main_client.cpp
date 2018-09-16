@@ -4,6 +4,7 @@
 #include "custom_sock.h"
 #include "TcpClient.h"
 #include "config.h"
+#include "sock_thread_handler.h"
 
 #define DEFAULT_PORT 27015
 
@@ -19,6 +20,7 @@ int main(int argc, char **argv)
 
     if (is_started)
     {
+        TcpClient_Communicate(&client, sock_client_callback);
         TcpClient_Stop(&client);
     }
     
