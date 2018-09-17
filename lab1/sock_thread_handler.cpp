@@ -6,6 +6,7 @@
 
 #include "config.h"
 #include "file_manage.h"
+#include "console.h"
 
 const char* server_command_converter[] = 
 {
@@ -19,9 +20,17 @@ const char* server_command_converter[] =
     "DOWNLOAD_CONTINUE",
 };
 
+const server_command_t spec_mode_commands[] = 
+{
+    server_command_upload,
+    server_command_download,
+    server_command_upload_continue,
+    server_command_download_continue,
+};
+
 void sock_thread_callback(custom_sock_t s)
 {
-    int result;
+    size_t result;
     std::string recv_buff;
 
 	// Receive until the peer shuts down the connection
@@ -142,27 +151,52 @@ std::string execute_disconnect(custom_sock_t s, std::string& params)
 	return std::string();
 }
 
+server_command_t sock_client_spec_mode_if_need(custom_sock_t s, std::string command_string)
+{
+    server_command_t command = parse_command(command_string);
+    bool is_command_spec = false;
+    for (uint16_t i = 0; i < (sizeof(spec_mode_commands)/sizeof(spec_mode_commands[0])); i++)
+    {
+        if (command == spec_mode_commands[i])
+        {
+            is_command_spec = true;
+            break;
+        }
+    }
+
+    if (is_command_spec)
+    {
+        //TODO:
+    }
+
+    return command;
+}
+
 void sock_client_callback(custom_sock_t s)
 {
-    std::string res = "TIME\r\nDISCONNECT\r\n";
-    if (res.length())
+    server_command_t c;
+    bool is_error;
+    do
     {
-        // Echo the buffer back to the sender
-#ifdef _WIN32
-		const int len = (int)res.length();
-#else
-		const size_t len = res.length();
-#endif
+        std::string input = readline();
 
-        int send_result = send( s, res.c_str(), len, 0 );
+#ifdef _WIN32
+		const int len = (int)input.length();
+#else
+		const size_t len = input.length();
+#endif
+        int send_result = send( s, input.c_str(), len, 0 );
         if (send_result == SOCKET_ERROR) {
             fprintf(stderr, "send failed with error: %d\n", CUSTOM_SOCK_ERROR_CODE);
             return;
         }
-    }
 
-    std::string received_info;
-    Socket_RecvEndLine(s, received_info, SOCKET_COMMAND_DELIMITER_1);
-    
-    printf("%s", received_info.c_str());
+        c = sock_client_spec_mode_if_need(s, input);
+
+        std::string received_info;
+        Socket_RecvEndLine(s, received_info, SOCKET_COMMAND_DELIMITER_1, &is_error);
+
+        printf("%s", received_info.c_str());
+    } while (c != server_command_disconnect && !is_error);
+        
 }

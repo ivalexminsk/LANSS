@@ -23,6 +23,10 @@ int main(int argc, char **argv)
         TcpClient_Communicate(&client, sock_client_callback);
         TcpClient_Stop(&client);
     }
+    else
+    {
+        fprintf(stderr, "Cannot start client\n");
+    }
     
     TcpClient_GlobalDeInit();
 

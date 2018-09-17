@@ -36,7 +36,9 @@ void TcpClient_Communicate(TcpClient_t* h, ready_message_callback_t callback)
 {
     if(h && h->sock != CUSTOM_SOCK_INVALID)
     {
+        printf("Communication started\n");
         callback(h->sock);
+        printf("Communication ended\n");
     }
 }
 

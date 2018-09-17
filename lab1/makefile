@@ -19,6 +19,7 @@ SOURCE_CLIENT   += main_client.cpp
 SOURCE_SERVER   += main.cpp
 SOURCE_CLIENT   += TcpClient.cpp
 SOURCE_SERVER   += TcpServ.cpp
+SOURCE          += console.cpp
 SOURCE          += custom_sock.cpp
 SOURCE          += sock_thread_handler.cpp
 SOURCE          += file_manage.cpp

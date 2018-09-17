@@ -118,6 +118,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="console.cpp" />
     <ClCompile Include="custom_sock.cpp" />
     <ClCompile Include="file_manage.cpp" />
     <ClCompile Include="main.cpp" />
@@ -127,6 +128,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="config.h" />
+    <ClInclude Include="console.h" />
     <ClInclude Include="custom_lib.h" />
     <ClInclude Include="custom_sock.h" />
     <ClInclude Include="file_manage.h" />

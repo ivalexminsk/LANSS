@@ -122,6 +122,7 @@
     <ClCompile Include="../main_client.cpp" />
     <ClCompile Include="../serializer.cpp" />
     <ClCompile Include="../sock_thread_handler.cpp" />
+    <ClCompile Include="..\console.cpp" />
     <ClCompile Include="..\custom_sock.cpp" />
     <ClCompile Include="..\TcpClient.cpp" />
   </ItemGroup>
@@ -132,6 +133,7 @@
     <ClInclude Include="../file_manage.h" />
     <ClInclude Include="../serializer.h" />
     <ClInclude Include="../sock_thread_handler.h" />
+    <ClInclude Include="..\console.h" />
     <ClInclude Include="..\TcpClient.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
