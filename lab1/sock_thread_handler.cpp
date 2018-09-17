@@ -22,36 +22,27 @@ const char* server_command_converter[] =
 void sock_thread_callback(custom_sock_t s)
 {
     int result;
-    char recv_byte;
     std::string recv_buff;
 
 	// Receive until the peer shuts down the connection
     do {
-        result = recv(s, &recv_byte, sizeof(recv_byte), 0);
-        if (result > 0) 
+        result = Socket_RecvEndLine(s, recv_buff, SOCKET_COMMAND_DELIMITER_1);
+        char last = recv_buff[recv_buff.length() - 1];
+        while(last == SOCKET_COMMAND_DELIMITER_0 || last == SOCKET_COMMAND_DELIMITER_1)
         {
-            if (recv_byte == SOCKET_COMMAND_DELIMITER_0 || recv_byte == SOCKET_COMMAND_DELIMITER_1)
-            {
-                server_command_t command = parse_command(recv_buff);
-                execute_command(s, command, recv_buff);
-
-                recv_buff.clear();
-
-                if (command == server_command_disconnect)
-                {
-                    /* For disconnecting */
-                    result = 0;
-                }
-            }
-            else
-            {
-                recv_buff.append(&recv_byte, sizeof(recv_byte));
-            }
+            recv_buff.pop_back();
+            last = recv_buff[recv_buff.length() - 1];
         }
-        else if (result < 0)
+
+        server_command_t command = parse_command(recv_buff);
+        execute_command(s, command, recv_buff);
+
+        recv_buff.clear();
+
+        if (command == server_command_disconnect)
         {
-            fprintf(stderr, "recv failed with error: %d\n", CUSTOM_SOCK_ERROR_CODE);
-            return;
+            /* For disconnecting */
+            result = 0;
         }
     } while (result > 0);
 }
