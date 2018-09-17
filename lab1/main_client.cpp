@@ -6,8 +6,6 @@
 #include "config.h"
 #include "sock_thread_handler.h"
 
-#define DEFAULT_PORT 27015
-
 int main(int argc, char **argv) 
 {
     char connect_string[] = "127.0.0.1";

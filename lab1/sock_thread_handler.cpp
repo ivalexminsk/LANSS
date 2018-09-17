@@ -36,12 +36,7 @@ void sock_thread_callback(custom_sock_t s)
 	// Receive until the peer shuts down the connection
     do {
         result = Socket_RecvEndLine(s, recv_buff, SOCKET_COMMAND_DELIMITER_1);
-        char last = recv_buff[recv_buff.length() - 1];
-        while(last == SOCKET_COMMAND_DELIMITER_0 || last == SOCKET_COMMAND_DELIMITER_1)
-        {
-            recv_buff.pop_back();
-            last = recv_buff[recv_buff.length() - 1];
-        }
+        trunk_endl(recv_buff);
 
         server_command_t command = parse_command(recv_buff);
         execute_command(s, command, recv_buff);
@@ -131,9 +126,20 @@ void execute_command(custom_sock_t s, server_command_t c, std::string& params)
     }
 }
 
+std::string& trunk_endl(std::string& s)
+{
+    while(s.length() 
+        && (s.back() == SOCKET_COMMAND_DELIMITER_0 
+        || s.back() == SOCKET_COMMAND_DELIMITER_1))
+    {
+        s.pop_back();
+    }
+    return s;
+}
+
 std::string execute_echo(custom_sock_t s, std::string& params)
 {
-	return append_newline(params);
+	return append_newline(trunk_endl(params));
 }
 
 std::string execute_time(custom_sock_t s, std::string& params)
@@ -142,18 +148,19 @@ std::string execute_time(custom_sock_t s, std::string& params)
     time_t result = time(nullptr);
 	char* time_res = asctime(gmtime(&result));
 	std::string time_string(time_res);
-	return append_newline(time_string);
+	return append_newline(trunk_endl(time_string));
 }
 
 std::string execute_disconnect(custom_sock_t s, std::string& params)
 {
 	//see sock_thread_callback implementation
-	return std::string();
+	std::string res = "Bye";
+	return append_newline(trunk_endl(res));
 }
 
 server_command_t sock_client_spec_mode_if_need(custom_sock_t s, std::string command_string)
 {
-    server_command_t command = parse_command(command_string);
+    server_command_t command = parse_command(trunk_endl(command_string));
     bool is_command_spec = false;
     for (uint16_t i = 0; i < (sizeof(spec_mode_commands)/sizeof(spec_mode_commands[0])); i++)
     {

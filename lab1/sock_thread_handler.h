@@ -31,6 +31,14 @@ void sock_client_callback(custom_sock_t s);
 server_command_t parse_command(std::string& buff);
 void execute_command(custom_sock_t s, server_command_t c, std::string& params);
 
+/**
+ * @brief Truncate last \r & \n symbols
+ * 
+ * @param s String to truncate
+ * @return std::string& s link
+ */
+std::string& trunk_endl(std::string& s);
+
 std::string execute_echo(custom_sock_t s, std::string& params);
 std::string execute_time(custom_sock_t s, std::string& params);
 std::string execute_disconnect(custom_sock_t s, std::string& params);
