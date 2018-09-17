@@ -170,20 +170,8 @@ void sock_client_callback(custom_sock_t s)
         }
     }
 
-    int result;
-    char recv_byte;
-
-	// Receive until the peer shuts down the connection
-    do {
-        result = recv(s, &recv_byte, sizeof(recv_byte), 0);
-        if (result > 0) 
-        {
-            printf("%c", recv_byte);
-        }
-        else if (result < 0)
-        {
-            fprintf(stderr, "recv failed with error: %d\n", CUSTOM_SOCK_ERROR_CODE);
-            return;
-        }
-    } while (result > 0);
+    std::string received_info;
+    Socket_RecvEndLine(s, received_info, SOCKET_COMMAND_DELIMITER_1);
+    
+    printf("%s", received_info.c_str());
 }

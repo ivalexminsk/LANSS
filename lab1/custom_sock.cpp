@@ -118,3 +118,56 @@ custom_sock_t Socket_Start(sock_type_t sock_type, char* server_name, uint16_t po
 
     return listen_socket;
 }
+
+size_t Socket_Recv(custom_sock_t s, std::string& buff, size_t count)
+{
+    size_t was_read = 0;
+    
+    int result = 1;
+    char recv_byte;
+
+	// Receive until the peer shuts down the connection
+    while (result > 0 && count > 0)
+    {
+        result = recv(s, &recv_byte, sizeof(recv_byte), 0);
+        if (result > 0) 
+        {
+            buff.push_back(recv_byte);
+            was_read++;
+            count--;
+        }
+        else if (result < 0)
+        {
+            fprintf(stderr, "recv failed with error: %d\n", CUSTOM_SOCK_ERROR_CODE);
+            return was_read;
+        }
+    }
+
+    return was_read;
+}
+
+size_t Socket_RecvEndLine(custom_sock_t s, std::string& buff, char stop_symbol)
+{
+    size_t was_read = 0;
+    
+    int result = 1;
+    char recv_byte = stop_symbol + 1;
+
+	// Receive until the peer shuts down the connection
+    while (result > 0 && recv_byte != stop_symbol)
+    {
+        result = recv(s, &recv_byte, sizeof(recv_byte), 0);
+        if (result > 0) 
+        {
+            buff.push_back(recv_byte);
+            was_read++;
+        }
+        else if (result < 0)
+        {
+            fprintf(stderr, "recv failed with error: %d\n", CUSTOM_SOCK_ERROR_CODE);
+            return was_read;
+        }
+    }
+
+    return was_read;
+}
