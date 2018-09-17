@@ -18,31 +18,36 @@ std::string execute_upload(custom_sock_t s, std::string& params)
 		return append_newline(res);
 	}
 
-	std::vector<uint8_t> recv_buff;
+	std::vector<uint8_t> serialize_buff;
+	std::string recv_buff;
 
 	do
 	{
 		UPLOAD_DOWNLOAD_SIZE_TYPE recv_size = 0;
-		if (recv(s, (char*)&recv_size, sizeof(recv_size), 0) != sizeof(recv_size))
+		if (Socket_Recv(s, recv_buff, sizeof(recv_size)) != sizeof(recv_size))
 		{
 			fprintf(stderr, "Cannot receive packet size\r\n");
 			res = "Error receiving size";
 			break;
 		}
-		recv_buff.assign(recv_size, 0);
-		if (recv(s, (char*)recv_buff.data(), recv_size, 0) != recv_size)
+		recv_size = *((UPLOAD_DOWNLOAD_SIZE_TYPE*)recv_buff.data());
+
+		if (Socket_Recv(s, recv_buff, recv_size) != recv_size)
 		{
 			fprintf(stderr, "Cannot receive packet\r\n");
 			res = "Error receiving packet";
 			break;
 		}
 
-		if (!payload_struct_deserialize(to_recv, recv_buff, recv_size))
+		serialize_buff.insert(serialize_buff.end(), recv_buff.begin(), recv_buff.end());
+
+		if (!payload_struct_deserialize(to_recv, serialize_buff, recv_size))
 		{
 			fprintf(stderr, "Cannot deserialize packet\r\n");
 			res = "Error deserialize packet";
 			break;
 		}
+		serialize_buff.clear();
 
 		if (!file_write(session, to_recv))
 		{
@@ -84,7 +89,6 @@ std::string execute_download(custom_sock_t s, std::string& params)
 		UPLOAD_DOWNLOAD_SIZE_TYPE send_size = (UPLOAD_DOWNLOAD_SIZE_TYPE)payload_struct_serialize(to_send, send_buff);
 		send(s, (const char*)&send_size, sizeof(send_size), 0);
 		send(s, (const char*)send_buff.data(), send_size, 0);
-		//TODO:
 	} while (!(to_send.is_last));
 
 	fclose(session.handle);
