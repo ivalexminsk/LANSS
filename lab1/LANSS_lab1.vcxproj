@@ -121,6 +121,7 @@
     <ClCompile Include="console.cpp" />
     <ClCompile Include="custom_sock.cpp" />
     <ClCompile Include="file_manage.cpp" />
+    <ClCompile Include="handshake.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="serializer.cpp" />
     <ClCompile Include="sock_thread_handler.cpp" />
@@ -132,6 +133,7 @@
     <ClInclude Include="custom_lib.h" />
     <ClInclude Include="custom_sock.h" />
     <ClInclude Include="file_manage.h" />
+    <ClInclude Include="handshake.h" />
     <ClInclude Include="serializer.h" />
     <ClInclude Include="sock_thread_handler.h" />
     <ClInclude Include="TcpServ.h" />
