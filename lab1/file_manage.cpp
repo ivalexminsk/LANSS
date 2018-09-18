@@ -38,6 +38,7 @@ std::string execute_upload(custom_sock_t s, std::string& params)
 			break;
 		}
 		recv_size = *((UPLOAD_DOWNLOAD_SIZE_TYPE*)recv_buff.data());
+		recv_buff.clear();
 
 		if (Socket_Recv(s, recv_buff, recv_size) != recv_size)
 		{
@@ -47,6 +48,7 @@ std::string execute_upload(custom_sock_t s, std::string& params)
 		}
 
 		serialize_buff.insert(serialize_buff.end(), recv_buff.begin(), recv_buff.end());
+		recv_buff.clear();
 
 		if (!payload_struct_deserialize(to_recv, serialize_buff, recv_size))
 		{
