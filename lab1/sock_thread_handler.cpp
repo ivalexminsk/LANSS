@@ -163,16 +163,6 @@ std::string execute_disconnect(custom_sock_t s, std::string& params)
 server_command_t sock_client_spec_mode_if_need(custom_sock_t s, std::string command_string)
 {
     server_command_t command = parse_command(trunk_endl(command_string));
-    bool is_command_spec = false;
-    for (uint16_t i = 0; i < (sizeof(spec_mode_commands)/sizeof(spec_mode_commands[0])); i++)
-    {
-        if (command == spec_mode_commands[i])
-        {
-            is_command_spec = true;
-            break;
-        }
-    }
-
     std::string answer;
 
     switch(command)
@@ -195,7 +185,7 @@ server_command_t sock_client_spec_mode_if_need(custom_sock_t s, std::string comm
 
     if (answer.length() > 0)
     {
-        printf("Internal answer: %s", answer);
+        printf("Internal answer: %s", answer.c_str());
     }
 
     return command;

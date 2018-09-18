@@ -14,7 +14,7 @@ std::string execute_upload(custom_sock_t s, std::string& params)
 	session.next_part_to_send_recv = 0;
 	session.current_operation = file_operation_upload;
 	session.handle = fopen(file_name.c_str(), "wb");
-	if (!three_way_handshake_up((bool)(session.handle)))
+	if (!three_way_handshake_up(s, (bool)(session.handle)))
 	{
 		res = "Bad handshake";
 		return append_newline(res);
@@ -77,7 +77,7 @@ std::string execute_download(custom_sock_t s, std::string& params)
 	session.next_part_to_send_recv = 0;
 	session.current_operation = file_operation_download;
 	session.handle = fopen(file_name.c_str(), "rb");
-	if (!three_way_handshake_down((bool)(session.handle)))
+	if (!three_way_handshake_down(s, (bool)(session.handle)))
 	{
 		res = "Bad handshake";
 		return append_newline(res);
@@ -105,7 +105,7 @@ std::string execute_download(custom_sock_t s, std::string& params)
 			fprintf(stderr, "Cannot send packet size. Res = %d, errno = %d", res, CUSTOM_SOCK_ERROR_CODE);
 			break;
 		}
-		int res = (int)send(s, (const char*)send_buff.data(), send_size, 0);
+		res = (int)send(s, (const char*)send_buff.data(), send_size, 0);
 		if (res != send_size)
 		{
 			fprintf(stderr, "Cannot send packet size. Res = %d, errno = %d", res, CUSTOM_SOCK_ERROR_CODE);

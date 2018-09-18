@@ -53,8 +53,6 @@ bool three_way_handshake_down(custom_sock_t s, bool my_answer)
         return false;
     }
 
-    std::string buff;
-    bool other_answer;
     if (Socket_Recv(s, buff, sizeof(other_answer)) != sizeof(other_answer))
     {
         return false;
