@@ -87,8 +87,18 @@ std::string execute_download(custom_sock_t s, std::string& params)
 		}
 
 		UPLOAD_DOWNLOAD_SIZE_TYPE send_size = (UPLOAD_DOWNLOAD_SIZE_TYPE)payload_struct_serialize(to_send, send_buff);
-		send(s, (const char*)&send_size, sizeof(send_size), 0);
-		send(s, (const char*)send_buff.data(), send_size, 0);
+		int res = (int)send(s, (const char*)&send_size, sizeof(send_size), 0);
+		if (res != sizeof(send_size))
+		{
+			fprintf(stderr, "Cannot send packet size. Res = %d, errno = %d", res, CUSTOM_SOCK_ERROR_CODE);
+			break;
+		}
+		int res = (int)send(s, (const char*)send_buff.data(), send_size, 0);
+		if (res != send_size)
+		{
+			fprintf(stderr, "Cannot send packet size. Res = %d, errno = %d", res, CUSTOM_SOCK_ERROR_CODE);
+			break;
+		}
 	} while (!(to_send.is_last));
 
 	fclose(session.handle);

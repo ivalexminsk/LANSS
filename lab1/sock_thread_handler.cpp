@@ -106,6 +106,8 @@ void execute_command(custom_sock_t s, server_command_t c, std::string& params)
         break;
     case server_command_none:
 	default:
+        res = "Unknown command";
+        res = append_newline(trunk_endl(res));
         break;
     }
 
