@@ -173,9 +173,29 @@ server_command_t sock_client_spec_mode_if_need(custom_sock_t s, std::string comm
         }
     }
 
-    if (is_command_spec)
+    std::string answer;
+
+    switch(command)
     {
+    case server_command_upload:
+        answer = execute_download(s, command_string);
+        break;
+    case server_command_download:
+        answer = execute_upload(s, command_string);
+        break;
+    case server_command_upload_continue:
         //TODO:
+        break;
+    case server_command_download_continue:
+        //TODO:
+        break;
+    default:
+        break;
+    }
+
+    if (answer.length() > 0)
+    {
+        printf("Internal answer: %s", answer);
     }
 
     return command;

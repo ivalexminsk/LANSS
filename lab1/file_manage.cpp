@@ -2,6 +2,8 @@
 
 #include <algorithm>
 
+#include "handshake.h"
+
 std::string execute_upload(custom_sock_t s, std::string& params)
 {
 	std::string res = "Completed";
@@ -12,6 +14,11 @@ std::string execute_upload(custom_sock_t s, std::string& params)
 	session.next_part_to_send_recv = 0;
 	session.current_operation = file_operation_upload;
 	session.handle = fopen(file_name.c_str(), "wb");
+	if (!three_way_handshake_up((bool)(session.handle)))
+	{
+		res = "Bad handshake";
+		return append_newline(res);
+	}
 	if (!(session.handle))
 	{
 		res = "Cannot open output file";
@@ -70,6 +77,11 @@ std::string execute_download(custom_sock_t s, std::string& params)
 	session.next_part_to_send_recv = 0;
 	session.current_operation = file_operation_download;
 	session.handle = fopen(file_name.c_str(), "rb");
+	if (!three_way_handshake_down((bool)(session.handle)))
+	{
+		res = "Bad handshake";
+		return append_newline(res);
+	}
 	if (!(session.handle))
 	{
 		res = "Cannot open input file";
