@@ -27,6 +27,8 @@ std::string execute_upload(custom_sock_t s, std::string& params)
 
 	std::vector<uint8_t> serialize_buff;
 	std::string recv_buff;
+	unsigned prev = 101;
+	unsigned curr = 101;
 
 	do
 	{
@@ -63,6 +65,8 @@ std::string execute_upload(custom_sock_t s, std::string& params)
 			res = "Error writing";
 			break;
 		}
+
+		calc_and_print_stat(&prev ,&curr, &to_recv);
 	} while (!(to_recv.is_last));
 
 	fclose(session.handle);
@@ -91,6 +95,8 @@ std::string execute_download(custom_sock_t s, std::string& params)
 	}
 
 	std::vector<uint8_t> send_buff;
+	unsigned prev = 101;
+	unsigned curr = 101;
 
 	do
 	{
@@ -113,6 +119,8 @@ std::string execute_download(custom_sock_t s, std::string& params)
 			fprintf(stderr, "Cannot send packet size. Res = %d, errno = %d", res, CUSTOM_SOCK_ERROR_CODE);
 			break;
 		}
+
+		calc_and_print_stat(&prev, &curr, &to_send);
 	} while (!(to_send.is_last));
 
 	fclose(session.handle);
@@ -192,4 +200,16 @@ bool file_write(file_session_t& session, send_recv_payload_t& to_recv)
 	session.next_part_to_send_recv++;
 
 	return true;
+}
+
+void calc_and_print_stat(unsigned* prev, unsigned* curr, send_recv_payload_t* send_recv_payload)
+{
+	if (!prev || !curr || !send_recv_payload) return;
+
+	*curr = (unsigned)(100 * (send_recv_payload->sector_current_num + 1) / (send_recv_payload->sector_amount));
+
+	if (*curr != *prev)
+	{
+		printf("%u%%\r", *curr);
+	}
 }
