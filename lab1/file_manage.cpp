@@ -52,7 +52,7 @@ std::string execute_upload(custom_sock_t s, std::string& params)
 
 		if (!payload_struct_deserialize(to_recv, serialize_buff, recv_size))
 		{
-			fprintf(stderr, "Cannot deserialize packet\r\n");
+			fprintf(stderr, "Cannot deserialize packet (will be %lu)\r\n", (long unsigned)session.next_part_to_send_recv);
 			res = "Error deserialize packet";
 			break;
 		}
@@ -151,7 +151,6 @@ bool file_read(file_session_t& session, send_recv_payload_t& to_send)
 
 	const long file_len = ftell(session.handle);
 	to_send.sector_amount = ((file_len - 1) / kBlockSize + 1);
-	printf("Out file len: %ld bytes\r\n", file_len);
 
 	if (fseek(session.handle, (long)(kBlockSize * session.next_part_to_send_recv), SEEK_SET))
 	{
