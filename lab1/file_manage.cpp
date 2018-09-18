@@ -1,6 +1,7 @@
 #include "file_manage.h"
 
 #include <algorithm>
+#include <time.h>
 
 #include "handshake.h"
 
@@ -30,6 +31,7 @@ std::string execute_upload(custom_sock_t s, std::string& params)
 	unsigned prev = 101;
 	unsigned curr = 101;
 
+	time_t start = time(nullptr);
 	do
 	{
 		UPLOAD_DOWNLOAD_SIZE_TYPE recv_size = 0;
@@ -68,6 +70,8 @@ std::string execute_upload(custom_sock_t s, std::string& params)
 
 		calc_and_print_stat(&prev ,&curr, &to_recv);
 	} while (!(to_recv.is_last));
+	time_t stop = time(nullptr);
+	calc_and_print_res_load(start, stop, &to_recv);
 
 	fclose(session.handle);
 
@@ -98,6 +102,7 @@ std::string execute_download(custom_sock_t s, std::string& params)
 	unsigned prev = 101;
 	unsigned curr = 101;
 
+	time_t start = time(nullptr);
 	do
 	{
 		if (!file_read(session, to_send))
@@ -122,6 +127,8 @@ std::string execute_download(custom_sock_t s, std::string& params)
 
 		calc_and_print_stat(&prev, &curr, &to_send);
 	} while (!(to_send.is_last));
+	time_t stop = time(nullptr);
+	calc_and_print_res_load(start, stop, &to_send);
 
 	fclose(session.handle);
 
@@ -212,4 +219,14 @@ void calc_and_print_stat(unsigned* prev, unsigned* curr, send_recv_payload_t* se
 	{
 		printf("%u%%\r", *curr);
 	}
+}
+
+void calc_and_print_res_load(time_t start, time_t stop, send_recv_payload_t* send_recv_payload)
+{
+	if (!send_recv_payload) return;
+
+	unsigned res = 
+		send_recv_payload->sector_amount * SERIALIZER_MAX_PAYLOAD_SIZE /
+		(stop - start);
+	printf("Load speed: %u kB/s\n", (res / 1000));
 }

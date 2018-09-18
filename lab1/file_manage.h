@@ -32,3 +32,4 @@ bool file_read(file_session_t& session, send_recv_payload_t& to_send);
 bool file_write(file_session_t& session, send_recv_payload_t& to_recv);
 
 void calc_and_print_stat(unsigned* prev, unsigned* curr, send_recv_payload_t* send_recv_payload);
+void calc_and_print_res_load(time_t start, time_t stop, send_recv_payload_t* send_recv_payload);
