@@ -27,7 +27,7 @@ typedef SOCKET custom_sock_t;
 #define CUSTOM_SOCK_ERROR_CODE WSAGetLastError()
 #define CUSTOM_SOCK_INVALID INVALID_SOCKET
 
-#elif defined (__linux__) || defined(__unix__)
+#elif defined (__linux__) || defined(__unix__) || defined(__APPLE__)
 
 /* Headers */
 #include <errno.h>
