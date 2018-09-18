@@ -6,6 +6,7 @@
 
 #include "config.h"
 #include "file_manage.h"
+#include "console.h"
 
 const char* server_command_converter[] = 
 {
@@ -19,39 +20,33 @@ const char* server_command_converter[] =
     "DOWNLOAD_CONTINUE",
 };
 
+const server_command_t spec_mode_commands[] = 
+{
+    server_command_upload,
+    server_command_download,
+    server_command_upload_continue,
+    server_command_download_continue,
+};
+
 void sock_thread_callback(custom_sock_t s)
 {
-    int result;
-    char recv_byte;
+    size_t result;
     std::string recv_buff;
 
 	// Receive until the peer shuts down the connection
     do {
-        result = recv(s, &recv_byte, sizeof(recv_byte), 0);
-        if (result > 0) 
-        {
-            if (recv_byte == SOCKET_COMMAND_DELIMITER_0 || recv_byte == SOCKET_COMMAND_DELIMITER_1)
-            {
-                server_command_t command = parse_command(recv_buff);
-                execute_command(s, command, recv_buff);
+        result = Socket_RecvEndLine(s, recv_buff, SOCKET_COMMAND_DELIMITER_1);
+        trunk_endl(recv_buff);
 
-                recv_buff.clear();
+        server_command_t command = parse_command(recv_buff);
+        execute_command(s, command, recv_buff);
 
-                if (command == server_command_disconnect)
-                {
-                    /* For disconnecting */
-                    result = 0;
-                }
-            }
-            else
-            {
-                recv_buff.append(&recv_byte, sizeof(recv_byte));
-            }
-        }
-        else if (result < 0)
+        recv_buff.clear();
+
+        if (command == server_command_disconnect)
         {
-            fprintf(stderr, "recv failed with error: %d\n", CUSTOM_SOCK_ERROR_CODE);
-            return;
+            /* For disconnecting */
+            result = 0;
         }
     } while (result > 0);
 }
@@ -111,6 +106,8 @@ void execute_command(custom_sock_t s, server_command_t c, std::string& params)
         break;
     case server_command_none:
 	default:
+        res = "Unknown command";
+        res = append_newline(trunk_endl(res));
         break;
     }
 
@@ -131,9 +128,20 @@ void execute_command(custom_sock_t s, server_command_t c, std::string& params)
     }
 }
 
+std::string& trunk_endl(std::string& s)
+{
+    while(s.length() 
+        && (s.back() == SOCKET_COMMAND_DELIMITER_0 
+        || s.back() == SOCKET_COMMAND_DELIMITER_1))
+    {
+        s.pop_back();
+    }
+    return s;
+}
+
 std::string execute_echo(custom_sock_t s, std::string& params)
 {
-	return append_newline(params);
+	return append_newline(trunk_endl(params));
 }
 
 std::string execute_time(custom_sock_t s, std::string& params)
@@ -142,11 +150,62 @@ std::string execute_time(custom_sock_t s, std::string& params)
     time_t result = time(nullptr);
 	char* time_res = asctime(gmtime(&result));
 	std::string time_string(time_res);
-	return append_newline(time_string);
+	return append_newline(trunk_endl(time_string));
 }
 
 std::string execute_disconnect(custom_sock_t s, std::string& params)
 {
 	//see sock_thread_callback implementation
-	return std::string();
+	std::string res = "Bye";
+	return append_newline(trunk_endl(res));
+}
+
+server_command_t sock_client_spec_mode_if_need(custom_sock_t s, std::string command_string)
+{
+    server_command_t command = parse_command(trunk_endl(command_string));
+    bool is_command_spec = false;
+    for (uint16_t i = 0; i < (sizeof(spec_mode_commands)/sizeof(spec_mode_commands[0])); i++)
+    {
+        if (command == spec_mode_commands[i])
+        {
+            is_command_spec = true;
+            break;
+        }
+    }
+
+    if (is_command_spec)
+    {
+        //TODO:
+    }
+
+    return command;
+}
+
+void sock_client_callback(custom_sock_t s)
+{
+    server_command_t c;
+    bool is_error;
+    do
+    {
+        std::string input = readline();
+
+#ifdef _WIN32
+		const int len = (int)input.length();
+#else
+		const size_t len = input.length();
+#endif
+        int send_result = send( s, input.c_str(), len, 0 );
+        if (send_result == SOCKET_ERROR) {
+            fprintf(stderr, "send failed with error: %d\n", CUSTOM_SOCK_ERROR_CODE);
+            return;
+        }
+
+        c = sock_client_spec_mode_if_need(s, input);
+
+        std::string received_info;
+        Socket_RecvEndLine(s, received_info, SOCKET_COMMAND_DELIMITER_1, &is_error);
+
+        printf("%s", received_info.c_str());
+    } while (c != server_command_disconnect && !is_error);
+        
 }

@@ -4,8 +4,7 @@
 #include <stdio.h>
 #include "TcpServ.h"
 #include "sock_thread_handler.h"
-
-#define DEFAULT_PORT 27015
+#include "config.h"
 
 int main() 
 {
@@ -13,7 +12,7 @@ int main()
 
 	TcpServ_t serv;
 	TcpServ_Init(&serv);
-	if (TcpServ_Start(&serv, sock_tcp, DEFAULT_PORT))
+	if (TcpServ_Start(&serv, sock_tcp, COMMUNICATION_PORT))
 	{
 		while (true)
 		{

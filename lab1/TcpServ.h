@@ -9,8 +9,6 @@ struct TcpServ_t
 	custom_sock_t serv_sock;
 };
 
-typedef void (*ready_message_callback_t) (custom_sock_t s);
-
 void TcpServ_GlobalInit();
 void TcpServ_GlobalDeInit();
 

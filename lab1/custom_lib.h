@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <stdio.h>
+#include <string.h>
 
 #ifdef _WIN32
 

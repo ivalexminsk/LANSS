@@ -15,51 +15,51 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
+    <ClCompile Include="../sock_thread_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TcpServ.cpp">
+    <ClCompile Include="../file_manage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="sock_thread_handler.cpp">
+    <ClCompile Include="../serializer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="file_manage.cpp">
+    <ClCompile Include="../main_client.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="serializer.cpp">
+    <ClCompile Include="..\TcpClient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="custom_sock.cpp">
+    <ClCompile Include="..\custom_sock.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="console.cpp">
+    <ClCompile Include="..\console.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="TcpServ.h">
+    <ClInclude Include="../custom_sock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="custom_sock.h">
+    <ClInclude Include="../config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="config.h">
+    <ClInclude Include="../custom_lib.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="custom_lib.h">
+    <ClInclude Include="../sock_thread_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="sock_thread_handler.h">
+    <ClInclude Include="../file_manage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="file_manage.h">
+    <ClInclude Include="../serializer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="serializer.h">
+    <ClInclude Include="..\TcpClient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="console.h">
+    <ClInclude Include="..\console.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

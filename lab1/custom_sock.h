@@ -1,5 +1,9 @@
 #pragma once
 
+#include <stdint.h>
+#include <stdbool.h>
+#include <string>
+
 #ifdef _WIN32
 /* Windows full support */
 
@@ -11,9 +15,10 @@
 #include <ws2tcpip.h>
 
 /* Libs */
-// Need to link with Ws2_32.lib
+// Need to link with Ws2_32.lib, Mswsock.lib, and Advapi32.lib
 #pragma comment (lib, "Ws2_32.lib")
-// #pragma comment (lib, "Mswsock.lib")
+#pragma comment (lib, "Mswsock.lib")
+#pragma comment (lib, "AdvApi32.lib")
 
 /* Typedefs */
 typedef SOCKET custom_sock_t;
@@ -60,3 +65,11 @@ typedef enum sock_type_t
 	sock_tcp,
 	sock_udp,
 } sock_type_t;
+
+typedef void (*ready_message_callback_t) (custom_sock_t s);
+
+void Socket_GlobalInit();
+void Socket_GlobalDeInit();
+custom_sock_t Socket_Start(sock_type_t sock_type, char* server_name, uint16_t port, bool is_server_socket);
+size_t Socket_Recv(custom_sock_t s, std::string& buff, size_t count, bool* is_error = nullptr);
+size_t Socket_RecvEndLine(custom_sock_t s, std::string& buff, char stop_symbol, bool* is_error = nullptr);

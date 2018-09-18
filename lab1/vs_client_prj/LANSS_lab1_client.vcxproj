@@ -20,7 +20,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{1E8FCCD0-FE41-49EB-8B9D-48B12DFC1D94}</ProjectGuid>
+    <ProjectGuid>{2B46624E-9F6B-46DC-A07D-1EDA60EB4BF6}</ProjectGuid>
     <RootNamespace>LANSSlab1</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -118,23 +118,23 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="console.cpp" />
-    <ClCompile Include="custom_sock.cpp" />
-    <ClCompile Include="file_manage.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="serializer.cpp" />
-    <ClCompile Include="sock_thread_handler.cpp" />
-    <ClCompile Include="TcpServ.cpp" />
+    <ClCompile Include="../file_manage.cpp" />
+    <ClCompile Include="../main_client.cpp" />
+    <ClCompile Include="../serializer.cpp" />
+    <ClCompile Include="../sock_thread_handler.cpp" />
+    <ClCompile Include="..\console.cpp" />
+    <ClCompile Include="..\custom_sock.cpp" />
+    <ClCompile Include="..\TcpClient.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="config.h" />
-    <ClInclude Include="console.h" />
-    <ClInclude Include="custom_lib.h" />
-    <ClInclude Include="custom_sock.h" />
-    <ClInclude Include="file_manage.h" />
-    <ClInclude Include="serializer.h" />
-    <ClInclude Include="sock_thread_handler.h" />
-    <ClInclude Include="TcpServ.h" />
+    <ClInclude Include="../config.h" />
+    <ClInclude Include="../custom_lib.h" />
+    <ClInclude Include="../custom_sock.h" />
+    <ClInclude Include="../file_manage.h" />
+    <ClInclude Include="../serializer.h" />
+    <ClInclude Include="../sock_thread_handler.h" />
+    <ClInclude Include="..\console.h" />
+    <ClInclude Include="..\TcpClient.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
