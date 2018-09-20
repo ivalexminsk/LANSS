@@ -43,6 +43,8 @@ void TcpServ_WaitConnection(TcpServ_t* h, ready_message_callback_t callback)
         fprintf(stderr, "accept failed with error: %d\n", CUSTOM_SOCK_ERROR_CODE);
     }
 
+	Socket_SetTimeouts(client_socket, true);
+
 	printf("Client connected\n");
 
 	// call user callback

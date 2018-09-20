@@ -74,12 +74,6 @@ custom_sock_t Socket_Start(sock_type_t sock_type, char* server_name, uint16_t po
             return CUSTOM_SOCK_INVALID;
         }
 
-        int optval = 1;
-        if (setsockopt (listen_socket, SOL_SOCKET, SO_KEEPALIVE, (char *)&optval, sizeof(optval)) < 0)
-        {
-            fprintf(stderr, "setsockopt keepalive failed\n");
-        }
-
         if (!is_server_socket)
         {
             // Connect to server.
@@ -89,6 +83,8 @@ custom_sock_t Socket_Start(sock_type_t sock_type, char* server_name, uint16_t po
                 listen_socket = CUSTOM_SOCK_INVALID;
                 continue;
             }
+
+            Socket_SetTimeouts(listen_socket, false);
         }
         break;
     }
@@ -194,4 +190,32 @@ size_t Socket_RecvEndLine(custom_sock_t s, std::string& buff, char stop_symbol, 
     }
 
     return was_read;
+}
+
+void Socket_SetTimeouts(custom_sock_t s, bool is_skip_recv_timeout)
+{
+    if (!s) return;
+
+    struct timeval timeout;      
+    timeout.tv_sec = COMMUNICATION_TIMEOUT_SECONDS;
+    timeout.tv_usec = 0;
+    int optval = 1;
+ 
+    if (setsockopt (s, SOL_SOCKET, SO_KEEPALIVE, (char *)&optval, sizeof(optval)) < 0)
+    {
+        fprintf(stderr, "setsockopt keepalive was failed. Error code %d\n", CUSTOM_SOCK_ERROR_CODE);
+    }
+
+    if (!is_skip_recv_timeout)
+    {
+        if (setsockopt (s, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0)
+        {
+            fprintf(stderr, "setsockopt recv was failed. Error code %d\n", CUSTOM_SOCK_ERROR_CODE);
+        }
+    }
+
+    if (setsockopt (s, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout, sizeof(timeout)) < 0)
+    {
+        fprintf(stderr, "setsockopt send was failed. Error code %d\n", CUSTOM_SOCK_ERROR_CODE);
+    }
 }

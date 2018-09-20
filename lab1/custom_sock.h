@@ -73,3 +73,4 @@ void Socket_GlobalDeInit();
 custom_sock_t Socket_Start(sock_type_t sock_type, char* server_name, uint16_t port, bool is_server_socket);
 size_t Socket_Recv(custom_sock_t s, std::string& buff, size_t count, bool* is_error = nullptr);
 size_t Socket_RecvEndLine(custom_sock_t s, std::string& buff, char stop_symbol, bool* is_error = nullptr);
+void Socket_SetTimeouts(custom_sock_t s, bool is_skip_recv_timeout);
