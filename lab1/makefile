@@ -82,7 +82,7 @@ clean:
 	@rm -rf $(OUT_DIR)
 
 run_client:
-	@$(PROJECT_CLIENT)
+	@cd vs_client_prj && ../$(PROJECT_CLIENT)
 
 run_server:
 	@$(PROJECT_SERVER)

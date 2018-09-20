@@ -223,7 +223,10 @@ void calc_and_print_stat(unsigned* prev, unsigned* curr, send_recv_payload_t* se
 {
 	if (!prev || !curr || !send_recv_payload) return;
 
-	*curr = (unsigned)(100 * (send_recv_payload->sector_current_num + 1) / (send_recv_payload->sector_amount));
+	uint64_t amount = send_recv_payload->sector_amount;
+	amount = (amount > 0) ? amount : 1;
+
+	*curr = (unsigned)(100 * (send_recv_payload->sector_current_num + 1) / (amount));
 
 	if (*curr != *prev)
 	{
