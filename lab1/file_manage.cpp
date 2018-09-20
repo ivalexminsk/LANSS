@@ -17,6 +17,12 @@ std::string execute_upload(custom_sock_t s, std::string& params)
 	session.handle = fopen(file_name.c_str(), "wb");
 	if (!three_way_handshake_up(s, (bool)(session.handle)))
 	{
+		if(session.handle)
+		{
+			fclose(session.handle);
+		}
+		remove(file_name.c_str());
+
 		res = "Bad handshake";
 		return append_newline(res);
 	}
@@ -89,6 +95,10 @@ std::string execute_download(custom_sock_t s, std::string& params)
 	session.handle = fopen(file_name.c_str(), "rb");
 	if (!three_way_handshake_down(s, (bool)(session.handle)))
 	{
+		if(session.handle)
+		{
+			fclose(session.handle);
+		}
 		res = "Bad handshake";
 		return append_newline(res);
 	}
@@ -156,7 +166,7 @@ std::string execute_continue_download(custom_sock_t s, std::string& params)
 bool file_read(file_session_t& session, send_recv_payload_t& to_send)
 {
 	uint8_t buff[SERIALIZER_MAX_PAYLOAD_SIZE];
-	static const uint64_t kBlockSize = SERIALIZER_MAX_PAYLOAD_SIZE;
+	static const int64_t kBlockSize = SERIALIZER_MAX_PAYLOAD_SIZE;
 
 	if (fseek(session.handle, 0, SEEK_END))
 	{
@@ -188,7 +198,7 @@ bool file_read(file_session_t& session, send_recv_payload_t& to_send)
 
 bool file_write(file_session_t& session, send_recv_payload_t& to_recv)
 {
-	static const uint64_t kBlockSize = SERIALIZER_MAX_PAYLOAD_SIZE;
+	static const int64_t kBlockSize = SERIALIZER_MAX_PAYLOAD_SIZE;
 
 	if (fseek(session.handle, (long)(kBlockSize * to_recv.sector_current_num), SEEK_SET))
 	{
