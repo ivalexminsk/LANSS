@@ -103,7 +103,7 @@ custom_sock_t Socket_Start(sock_type_t sock_type, char* server_name, uint16_t po
 
     if (listen_socket == CUSTOM_SOCK_INVALID) {
         fprintf(stderr, "Unable to connect to server!\n");
-        return false;
+        return CUSTOM_SOCK_INVALID;
     }
 
     if (is_server_socket)
