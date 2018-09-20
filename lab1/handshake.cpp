@@ -18,10 +18,7 @@ bool three_way_handshake_up(custom_sock_t s, bool my_answer)
     }
 
     other_answer = *((bool*)buff.data());
-    if (!other_answer)
-    {
-        return false;
-    }
+    my_answer &= other_answer;
 
     ans = (int)send(s, (char*)(&my_answer), sizeof(my_answer), 0);
     if (ans != sizeof(my_answer))
@@ -29,7 +26,7 @@ bool three_way_handshake_up(custom_sock_t s, bool my_answer)
         return false;
     }
 
-    return true;
+    return my_answer;
 }
 
 bool three_way_handshake_down(custom_sock_t s, bool my_answer)
@@ -42,10 +39,7 @@ bool three_way_handshake_down(custom_sock_t s, bool my_answer)
     }
 
     other_answer = *((bool*)buff.data());
-    if (!other_answer)
-    {
-        return false;
-    }
+    my_answer &= other_answer;
 
     int ans = (int)send(s, (char*)(&my_answer), sizeof(my_answer), 0);
     if (ans != sizeof(my_answer))
@@ -57,5 +51,5 @@ bool three_way_handshake_down(custom_sock_t s, bool my_answer)
     {
         return false;
     }
-    return true;
+    return (my_answer && other_answer);
 }
