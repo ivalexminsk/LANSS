@@ -74,6 +74,12 @@ custom_sock_t Socket_Start(sock_type_t sock_type, char* server_name, uint16_t po
             return CUSTOM_SOCK_INVALID;
         }
 
+        int optval = 1;
+        if (setsockopt (listen_socket, SOL_SOCKET, SO_KEEPALIVE, (char *)&optval, sizeof(optval)) < 0)
+        {
+            fprintf(stderr, "setsockopt keepalive failed\n");
+        }
+
         if (!is_server_socket)
         {
             // Connect to server.
