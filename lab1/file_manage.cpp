@@ -228,8 +228,9 @@ void calc_and_print_res_load(time_t start, time_t stop, send_recv_payload_t* sen
 {
 	if (!send_recv_payload) return;
 
+	time_t delta = ((stop - start) > 0 ? (stop - start) : 1);
+
 	unsigned res = 
-		send_recv_payload->sector_amount * SERIALIZER_MAX_PAYLOAD_SIZE /
-		(stop - start);
+		send_recv_payload->sector_amount * SERIALIZER_MAX_PAYLOAD_SIZE / delta;
 	printf("Load speed: %u kB/s\n", (res / 1000));
 }
