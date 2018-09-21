@@ -166,10 +166,10 @@ server_command_t sock_client_spec_mode_if_need(custom_sock_t s, std::string comm
         answer = execute_upload(s, command_string);
         break;
     case server_command_upload_continue:
-        //TODO:
+        answer = execute_continue_download(s, command_string);
         break;
     case server_command_download_continue:
-        //TODO:
+        answer = execute_continue_upload(s, command_string);
         break;
     default:
         break;

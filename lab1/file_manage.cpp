@@ -5,16 +5,23 @@
 
 #include "handshake.h"
 
-std::string execute_upload(custom_sock_t s, std::string& params)
+std::string execute_upload(custom_sock_t s, std::string& params, bool is_continue)
 {
 	std::string res = "Completed";
 	std::string file_name = FILE_SHARED_FOLDER + params;
 	
+	static const char write_file_ptr[] = "wb";
+	static const char append_file_ptr[] = "r+b";
+	const char* open_file_ptr = is_continue ? append_file_ptr : write_file_ptr;
+
 	send_recv_payload_t to_recv;
-	file_session_t session;
-	session.next_part_to_send_recv = 0;
+	static file_session_t session;
+	if (!is_continue)
+	{
+		session.next_part_to_send_recv = 0;
+	}
 	session.current_operation = file_operation_upload;
-	session.handle = fopen(file_name.c_str(), "wb");
+	session.handle = fopen(file_name.c_str(), open_file_ptr);
 	if (!three_way_handshake_up(s, (bool)(session.handle)))
 	{
 		if(session.handle)
@@ -24,6 +31,12 @@ std::string execute_upload(custom_sock_t s, std::string& params)
 		remove(file_name.c_str());
 
 		res = "Bad handshake";
+		return append_newline(res);
+	}
+
+	if (is_continue && !get_last_received(s, &(session.next_part_to_send_recv)))
+	{
+		res = "Bad handshake 2";
 		return append_newline(res);
 	}
 
@@ -79,7 +92,7 @@ std::string execute_upload(custom_sock_t s, std::string& params)
 	return append_newline(res);
 }
 
-std::string execute_download(custom_sock_t s, std::string& params)
+std::string execute_download(custom_sock_t s, std::string& params, bool is_continue)
 {
 	std::string res = "Completed";
 	std::string file_name = FILE_SHARED_FOLDER + params;
@@ -95,6 +108,11 @@ std::string execute_download(custom_sock_t s, std::string& params)
 			fclose(session.handle);
 		}
 		res = "Bad handshake";
+		return append_newline(res);
+	}
+	if (is_continue && !send_last_received(s, session.next_part_to_send_recv))
+	{
+		res = "Bad handshake 2";
 		return append_newline(res);
 	}
 
@@ -142,15 +160,11 @@ std::string append_newline(std::string& s)
 
 std::string execute_continue_upload(custom_sock_t s, std::string& params)
 {
-	//TODO:
-	std::string temp("TODO: upload continue");
-	return append_newline(temp);
+	return execute_upload(s, params, true);
 }
 std::string execute_continue_download(custom_sock_t s, std::string& params)
 {
-	//TODO:
-	std::string temp("TODO: download continue");
-	return append_newline(temp);
+	return execute_download(s, params, true);
 }
 
 bool file_read(file_session_t& session, send_recv_payload_t& to_send)

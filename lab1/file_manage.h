@@ -22,8 +22,8 @@ typedef struct file_session_t
 	uint64_t next_part_to_send_recv;
 } file_session_t;
 
-std::string execute_upload(custom_sock_t s, std::string& params);
-std::string execute_download(custom_sock_t s, std::string& params);
+std::string execute_upload(custom_sock_t s, std::string& params, bool is_continue = false);
+std::string execute_download(custom_sock_t s, std::string& params, bool is_continue = false);
 std::string execute_continue_upload(custom_sock_t s, std::string& params);
 std::string execute_continue_download(custom_sock_t s, std::string& params);
 std::string append_newline(std::string& s);
