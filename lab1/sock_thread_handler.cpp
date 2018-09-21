@@ -152,18 +152,29 @@ std::string execute_disconnect(custom_sock_t s, std::string& params)
 	return append_newline(trunk_endl(res));
 }
 
-server_command_t sock_client_spec_mode_if_need(custom_sock_t s, std::string command_string)
+server_command_t sock_client_spec_mode_if_need(custom_sock_t s, std::string command_string, std::string& restore_command)
 {
     server_command_t command = parse_command(trunk_endl(command_string));
     std::string answer;
+    std::string command_params = command_string;
 
     switch(command)
     {
     case server_command_upload:
+        is_aborted_connection = false;
         answer = execute_download(s, command_string);
+        if (is_aborted_connection && is_try_to_reconnect())
+        {
+            restore_command = server_command_converter[server_command_download_continue] + command_params;
+        }
         break;
     case server_command_download:
+        is_aborted_connection = false;
         answer = execute_upload(s, command_string);
+        if (is_aborted_connection && is_try_to_reconnect())
+        {
+            restore_command = server_command_converter[server_command_upload_continue] + command_params;
+        }
         break;
     case server_command_upload_continue:
         answer = execute_continue_download(s, command_string);
@@ -187,9 +198,18 @@ void sock_client_callback(custom_sock_t s)
 {
     server_command_t c;
     bool is_error;
+    std::string restore_string;
     do
     {
-        std::string input = readline();
+        std::string input;
+        if (restore_string.empty())
+        {
+            input = readline();
+        }
+        else
+        {
+            input = restore_string;
+        }
 
 #ifdef _WIN32
 		const int len = (int)input.length();
@@ -202,12 +222,22 @@ void sock_client_callback(custom_sock_t s)
             return;
         }
 
-        c = sock_client_spec_mode_if_need(s, input);
+        restore_string.clear();
+        c = sock_client_spec_mode_if_need(s, input, restore_string);
 
-        std::string received_info;
-        Socket_RecvEndLine(s, received_info, SOCKET_COMMAND_DELIMITER_1, &is_error);
+        if (restore_string.empty())
+        {
+            std::string received_info;
+            Socket_RecvEndLine(s, received_info, SOCKET_COMMAND_DELIMITER_1, &is_error);
 
-        printf("%s", received_info.c_str());
-    } while (c != server_command_disconnect && !is_error);
-        
+            printf("%s", received_info.c_str());
+        }
+    } while ((c != server_command_disconnect && !is_error) || !restore_string.empty());
+}
+
+bool is_try_to_reconnect()
+{
+    bool res = true;
+    //TODO:
+    return res;
 }

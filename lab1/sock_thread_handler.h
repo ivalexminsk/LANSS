@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <stdbool.h>
 
 #include "custom_sock.h"
 
@@ -42,3 +43,5 @@ std::string& trunk_endl(std::string& s);
 std::string execute_echo(custom_sock_t s, std::string& params);
 std::string execute_time(custom_sock_t s, std::string& params);
 std::string execute_disconnect(custom_sock_t s, std::string& params);
+
+bool is_try_to_reconnect();

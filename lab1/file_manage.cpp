@@ -5,8 +5,12 @@
 
 #include "handshake.h"
 
+bool is_aborted_connection = false;
+
 std::string execute_upload(custom_sock_t s, std::string& params, bool is_continue)
 {
+	is_aborted_connection = false;
+
 	std::string res = "Completed";
 	std::string file_name = FILE_SHARED_FOLDER + params;
 	
@@ -51,6 +55,7 @@ std::string execute_upload(custom_sock_t s, std::string& params, bool is_continu
 		UPLOAD_DOWNLOAD_SIZE_TYPE recv_size = 0;
 		if (Socket_Recv(s, recv_buff, sizeof(recv_size)) != sizeof(recv_size))
 		{
+			is_aborted_connection = true;
 			fprintf(stderr, "Cannot receive packet size\r\n");
 			res = "Error receiving size";
 			break;
@@ -60,6 +65,7 @@ std::string execute_upload(custom_sock_t s, std::string& params, bool is_continu
 
 		if (Socket_Recv(s, recv_buff, recv_size) != recv_size)
 		{
+			is_aborted_connection = true;
 			fprintf(stderr, "Cannot receive packet\r\n");
 			res = "Error receiving packet";
 			break;
@@ -94,6 +100,8 @@ std::string execute_upload(custom_sock_t s, std::string& params, bool is_continu
 
 std::string execute_download(custom_sock_t s, std::string& params, bool is_continue)
 {
+	is_aborted_connection = false;
+
 	std::string res = "Completed";
 	std::string file_name = FILE_SHARED_FOLDER + params;
 	send_recv_payload_t to_send;
@@ -133,12 +141,14 @@ std::string execute_download(custom_sock_t s, std::string& params, bool is_conti
 		int res = (int)send(s, (const char*)&send_size, sizeof(send_size), 0);
 		if (res != sizeof(send_size))
 		{
+			is_aborted_connection = true;
 			fprintf(stderr, "Cannot send packet size. Res = %d, errno = %d", res, CUSTOM_SOCK_ERROR_CODE);
 			break;
 		}
 		res = (int)send(s, (const char*)send_buff.data(), send_size, 0);
 		if (res != send_size)
 		{
+			is_aborted_connection = true;
 			fprintf(stderr, "Cannot send packet size. Res = %d, errno = %d", res, CUSTOM_SOCK_ERROR_CODE);
 			break;
 		}
