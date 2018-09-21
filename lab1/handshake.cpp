@@ -53,3 +53,23 @@ bool three_way_handshake_down(custom_sock_t s, bool my_answer)
     }
     return (my_answer && other_answer);
 }
+
+bool get_last_received(custom_sock_t s, uint64_t* answer)
+{
+    if (!answer) return false;
+
+    std::string buff;
+    if (Socket_Recv(s, buff, sizeof(*answer)) != sizeof(*answer))
+    {
+        return false;
+    }
+
+    *answer = *((uint64_t*)buff.data());
+    return true;
+}
+
+bool send_last_received(custom_sock_t s, uint64_t answer)
+{
+    int ans = (int)send(s, (char*)(&answer), sizeof(answer), 0);
+    return (ans != sizeof(answer));
+}
