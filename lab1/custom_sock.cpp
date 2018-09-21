@@ -196,9 +196,14 @@ void Socket_SetTimeouts(custom_sock_t s, bool is_skip_recv_timeout)
 {
     if (!s) return;
 
+#ifndef _WIN32
     struct timeval timeout;      
     timeout.tv_sec = COMMUNICATION_TIMEOUT_SECONDS;
     timeout.tv_usec = 0;
+#else
+    DWORD timeout = COMMUNICATION_TIMEOUT_SECONDS * 1000;
+#endif
+
     int optval = 1;
  
     if (setsockopt (s, SOL_SOCKET, SO_KEEPALIVE, (char *)&optval, sizeof(optval)) < 0)
@@ -206,12 +211,9 @@ void Socket_SetTimeouts(custom_sock_t s, bool is_skip_recv_timeout)
         fprintf(stderr, "setsockopt keepalive was failed. Error code %d\n", CUSTOM_SOCK_ERROR_CODE);
     }
 
-    if (!is_skip_recv_timeout)
+    if (setsockopt (s, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0)
     {
-        if (setsockopt (s, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0)
-        {
-            fprintf(stderr, "setsockopt recv was failed. Error code %d\n", CUSTOM_SOCK_ERROR_CODE);
-        }
+        fprintf(stderr, "setsockopt recv was failed. Error code %d\n", CUSTOM_SOCK_ERROR_CODE);
     }
 
     if (setsockopt (s, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout, sizeof(timeout)) < 0)
