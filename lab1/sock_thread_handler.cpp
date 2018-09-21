@@ -238,6 +238,16 @@ void sock_client_callback(custom_sock_t s)
 bool is_try_to_reconnect()
 {
     bool res = true;
-    //TODO:
+
+    printf("Connection aborted. Reconnect (y if agree)?\n");
+
+    std::string input = readline();
+    trunk_endl(input);
+
+    if (input != "y")
+    {
+        res = false;
+    }
+    
     return res;
 }
