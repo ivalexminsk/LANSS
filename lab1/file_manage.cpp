@@ -26,11 +26,6 @@ std::string execute_upload(custom_sock_t s, std::string& params)
 		res = "Bad handshake";
 		return append_newline(res);
 	}
-	if (!(session.handle))
-	{
-		res = "Cannot open output file";
-		return append_newline(res);
-	}
 
 	std::vector<uint8_t> serialize_buff;
 	std::string recv_buff;
@@ -100,11 +95,6 @@ std::string execute_download(custom_sock_t s, std::string& params)
 			fclose(session.handle);
 		}
 		res = "Bad handshake";
-		return append_newline(res);
-	}
-	if (!(session.handle))
-	{
-		res = "Cannot open input file";
 		return append_newline(res);
 	}
 

@@ -58,7 +58,7 @@ custom_sock_t Socket_Start(sock_type_t sock_type, char* server_name, uint16_t po
 	sprintf_custom(port_buff, "%u", port);
 
     // Resolve the server address and port
-    int res = getaddrinfo(nullptr, port_buff, &hints, &result);
+    int res = getaddrinfo(server_name, port_buff, &hints, &result);
     if ( res != 0 ) {
         fprintf(stderr, "getaddrinfo failed with error: %d\n", res);
         return CUSTOM_SOCK_INVALID;
