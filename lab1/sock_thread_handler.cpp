@@ -20,14 +20,6 @@ const char* server_command_converter[] =
     "DOWNLOAD_CONTINUE",
 };
 
-const server_command_t spec_mode_commands[] = 
-{
-    server_command_upload,
-    server_command_download,
-    server_command_upload_continue,
-    server_command_download_continue,
-};
-
 void sock_thread_callback(custom_sock_t s)
 {
     size_t result;
