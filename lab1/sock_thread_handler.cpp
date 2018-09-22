@@ -8,6 +8,8 @@
 #include "file_manage.h"
 #include "console.h"
 
+bool is_restore_connection = false;
+
 const char* server_command_converter[] = 
 {
     "",
@@ -198,7 +200,7 @@ void sock_client_callback(custom_sock_t s)
 {
     server_command_t c;
     bool is_error;
-    std::string restore_string;
+    static std::string restore_string;
     do
     {
         std::string input;
@@ -232,7 +234,9 @@ void sock_client_callback(custom_sock_t s)
 
             printf("%s", received_info.c_str());
         }
-    } while ((c != server_command_disconnect && !is_error) || !restore_string.empty());
+    } while (c != server_command_disconnect && !is_error);
+
+    is_restore_connection = (!restore_string.empty());
 }
 
 bool is_try_to_reconnect()

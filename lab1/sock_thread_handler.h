@@ -45,3 +45,5 @@ std::string execute_time(custom_sock_t s, std::string& params);
 std::string execute_disconnect(custom_sock_t s, std::string& params);
 
 bool is_try_to_reconnect();
+
+extern bool is_restore_connection;

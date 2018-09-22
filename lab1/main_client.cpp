@@ -14,17 +14,20 @@ int main(int argc, char **argv)
 
     TcpClient_Init(&client);
 
-    bool is_started = TcpClient_Start(&client, sock_tcp, connect_string, COMMUNICATION_PORT);
+    do
+        {
+        bool is_started = TcpClient_Start(&client, sock_tcp, connect_string, COMMUNICATION_PORT);
 
-    if (is_started)
-    {
-        TcpClient_Communicate(&client, sock_client_callback);
-        TcpClient_Stop(&client);
-    }
-    else
-    {
-        fprintf(stderr, "Cannot start client\n");
-    }
+        if (is_started)
+        {
+            TcpClient_Communicate(&client, sock_client_callback);
+            TcpClient_Stop(&client);
+        }
+        else
+        {
+            fprintf(stderr, "Cannot start client\n");
+        }
+    } while (is_restore_connection);
     
     TcpClient_GlobalDeInit();
 
