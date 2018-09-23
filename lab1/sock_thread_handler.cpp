@@ -158,7 +158,8 @@ server_command_t sock_client_spec_mode_if_need(custom_sock_t s, std::string comm
 {
     server_command_t command = parse_command(trunk_endl(command_string));
     std::string answer;
-    std::string command_params = command_string;
+    std::string command_params = (" " + command_string);
+	command_params = append_newline(command_params);
 
     switch(command)
     {
@@ -167,7 +168,7 @@ server_command_t sock_client_spec_mode_if_need(custom_sock_t s, std::string comm
         answer = execute_download(s, command_string);
         if (is_aborted_connection && is_try_to_reconnect())
         {
-            restore_command = server_command_converter[server_command_download_continue] + command_params;
+            restore_command = server_command_converter[server_command_upload_continue] + command_params;
         }
         break;
     case server_command_download:
@@ -175,7 +176,7 @@ server_command_t sock_client_spec_mode_if_need(custom_sock_t s, std::string comm
         answer = execute_upload(s, command_string);
         if (is_aborted_connection && is_try_to_reconnect())
         {
-            restore_command = server_command_converter[server_command_upload_continue] + command_params;
+            restore_command = server_command_converter[server_command_download_continue] + command_params;
         }
         break;
     case server_command_upload_continue:
