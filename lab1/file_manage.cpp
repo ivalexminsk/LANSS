@@ -38,7 +38,7 @@ std::string execute_upload(custom_sock_t s, std::string& params, bool is_continu
 		return append_newline(res);
 	}
 
-	if (is_continue && !get_last_received(s, &(session.next_part_to_send_recv)))
+	if (is_continue && !send_last_received(s, session.next_part_to_send_recv))
 	{
 		res = "Bad handshake 2";
 		return append_newline(res);
@@ -118,7 +118,7 @@ std::string execute_download(custom_sock_t s, std::string& params, bool is_conti
 		res = "Bad handshake";
 		return append_newline(res);
 	}
-	if (is_continue && !send_last_received(s, session.next_part_to_send_recv))
+	if (is_continue && !get_last_received(s, &(session.next_part_to_send_recv)))
 	{
 		res = "Bad handshake 2";
 		return append_newline(res);
