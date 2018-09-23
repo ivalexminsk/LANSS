@@ -71,5 +71,5 @@ bool get_last_received(custom_sock_t s, uint64_t* answer)
 bool send_last_received(custom_sock_t s, uint64_t answer)
 {
     int ans = (int)send(s, (char*)(&answer), sizeof(answer), 0);
-    return (ans != sizeof(answer));
+    return (ans == sizeof(answer));
 }
