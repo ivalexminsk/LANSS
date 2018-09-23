@@ -234,6 +234,10 @@ void sock_client_callback(custom_sock_t s)
 
             printf("%s", received_info.c_str());
         }
+		else
+		{
+			is_error = true;
+		}
     } while (c != server_command_disconnect && !is_error);
 
     is_restore_connection = (!restore_string.empty());
