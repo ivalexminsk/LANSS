@@ -8,11 +8,23 @@
 
 int main(int argc, char **argv) 
 {
-    char connect_string[] = "127.0.0.1";
+    char default_connect_string[] = "127.0.0.1";
+    char* connect_string = default_connect_string;
+    if (argc < 2)
+    {
+        printf("Cannot get parameter 1. Use default ip to connect\n");
+    }
+    else
+    {
+        connect_string = argv[1];
+    }
+
     TcpClient_t client;
     TcpClient_GlobalInit();
 
     TcpClient_Init(&client);
+
+    printf("Connecting to client '%s'\n", connect_string);
 
     do
         {
