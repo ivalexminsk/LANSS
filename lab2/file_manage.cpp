@@ -138,18 +138,18 @@ std::string execute_download(custom_sock_t s, std::string& params, bool is_conti
 		}
 
 		UPLOAD_DOWNLOAD_SIZE_TYPE send_size = (UPLOAD_DOWNLOAD_SIZE_TYPE)payload_struct_serialize(to_send, send_buff);
-		int res = (int)send(s, (const char*)&send_size, sizeof(send_size), 0);
-		if (res != sizeof(send_size))
+
+		//add send size to header
+		const char* send_size_string = (const char*)&send_size;
+		send_buff.insert(send_buff.begin(), send_size_string, send_size_string +  sizeof(send_size));
+
+		int send_size_packet = send_size + sizeof(send_size);
+
+		int res_send = (int)send(s, (const char*)send_buff.data(), send_size_packet, 0);
+		if (res_send != send_size_packet)
 		{
 			is_aborted_connection = true;
-			fprintf(stderr, "Cannot send packet size. Res = %d, errno = %d", res, CUSTOM_SOCK_ERROR_CODE);
-			break;
-		}
-		res = (int)send(s, (const char*)send_buff.data(), send_size, 0);
-		if (res != send_size)
-		{
-			is_aborted_connection = true;
-			fprintf(stderr, "Cannot send packet size. Res = %d, errno = %d", res, CUSTOM_SOCK_ERROR_CODE);
+			fprintf(stderr, "Cannot send packet size. Res = %d, errno = %d", res_send, CUSTOM_SOCK_ERROR_CODE);
 			break;
 		}
 
