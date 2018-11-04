@@ -369,3 +369,6 @@ out
 build
 .vscode
 .vs
+
+# go debugging in vscode
+debug

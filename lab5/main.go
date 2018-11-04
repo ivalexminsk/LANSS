@@ -1,30 +1,32 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/tatsushid/go-fastping"
-	"net"
+	"io/ioutil"
+	"log"
 	"os"
-	"time"
 )
 
 func main() {
-	//fmt.Println("hello world")
-	p := fastping.NewPinger()
-	ra, err := net.ResolveIPAddr("ip4:icmp", os.Args[1])
+	type Config struct {
+		Mode      string   `json:"mode"`
+		Addresses []string `json:"addresses"`
+	}
+
+	if len(os.Args) < 2 {
+		log.Fatal("Set config file path in arg 1")
+	}
+
+	content, err := ioutil.ReadFile(os.Args[1])
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Println("Cannot read config file")
+		log.Fatal(err)
 	}
-	p.AddIPAddr(ra)
-	p.OnRecv = func(addr *net.IPAddr, rtt time.Duration) {
-		fmt.Printf("IP Addr: %s receive, RTT: %v\n", addr.String(), rtt)
-	}
-	p.OnIdle = func() {
-		fmt.Println("finish")
-	}
-	err = p.Run()
-	if err != nil {
-		fmt.Println(err)
-	}
+
+	c := Config{}
+	json.Unmarshal(content, &c)
+
+	fmt.Println(c.Mode)
+	fmt.Println(c.Addresses)
 }
