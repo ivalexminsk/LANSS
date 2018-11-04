@@ -12,6 +12,9 @@ import (
 	"golang.org/x/net/ipv4"
 )
 
+const icmpID = 1
+const icmpStringID = "ip4:icmp"
+
 func main() {
 	type Config struct {
 		Mode      string   `json:"mode"`
@@ -59,7 +62,14 @@ func runTraceroute(addr []string) {
 }
 
 func pingThread(addr string, id int) {
-	conn, err := net.Dial("ip4:icmp", addr)
+	c, err := net.ListenPacket(icmpStringID, "0.0.0.0") // ICMP for IPv4
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer c.Close()
+	p := ipv4.NewPacketConn(c)
+
+	conn, err := net.Dial(icmpStringID, addr)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -87,8 +97,10 @@ func pingThread(addr string, id int) {
 	}
 
 	rb := make([]byte, 1500)
-	n, err := conn.Read(rb)
+	n, _, _, err := p.ReadFrom(rb)
 	if err != nil {
+		if err, ok := err.(net.Error); ok && err.Timeout() {
+		}
 		log.Fatal(err)
 	}
 
@@ -97,15 +109,7 @@ func pingThread(addr string, id int) {
 		fmt.Printf("%02X ", element)
 	}
 
-	ipv4Header, err := icmp.ParseIPv4Header(rb[:n])
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Printf("\nrmm: %v", ipv4Header)
-	fmt.Printf("\nrmm: %T", ipv4Header)
-
-	rm, err := icmp.ParseMessage(1, rb[:n]) //1 for ICMP v4
+	rm, err := icmp.ParseMessage(icmpID, rb[:n])
 	if err != nil {
 		log.Fatal(err)
 	}
