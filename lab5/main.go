@@ -7,6 +7,8 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/signal"
+	"sync"
 
 	"golang.org/x/net/icmp"
 	"golang.org/x/net/ipv4"
@@ -33,6 +35,15 @@ func main() {
 
 	c := Config{}
 	json.Unmarshal(content, &c)
+
+	osChan := make(chan os.Signal, 1)
+	signal.Notify(osChan, os.Interrupt)
+	go func() {
+		<-osChan
+
+		// sig is a ^C, handle it
+		os.Exit(1)
+	}()
 
 	switch c.Mode {
 	case "ping":
