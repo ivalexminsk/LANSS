@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -16,6 +17,8 @@ import (
 
 const icmpID = 1
 const icmpStringID = "ip4:icmp"
+const idRoutineDelta = 234
+const idLenBytes = 4
 
 func main() {
 	type Config struct {
@@ -36,50 +39,104 @@ func main() {
 	c := Config{}
 	json.Unmarshal(content, &c)
 
-	osChan := make(chan os.Signal, 1)
-	signal.Notify(osChan, os.Interrupt)
-	go func() {
-		<-osChan
-
-		// sig is a ^C, handle it
-		os.Exit(1)
-	}()
+	// var isEnd = false
+	appNeedClose := make(chan os.Signal, 1)
+	signal.Notify(appNeedClose, os.Interrupt)
 
 	switch c.Mode {
 	case "ping":
-		runPing(c.Addresses)
+		runPing(c.Addresses, appNeedClose)
 		break
 	case "traceroute":
-		runTraceroute(c.Addresses)
+		runTraceroute(c.Addresses, appNeedClose)
 		break
 	default:
 		log.Fatal("Unsupported mode")
 	}
 }
 
-func runPing(addr []string) {
+type routineInfo struct {
+	icmpMessage *icmp.Message
+	src         net.Addr
+}
+
+func runPing(addr []string, appNeedClose chan os.Signal) {
 	fmt.Println("Ping mode was selected")
 
-	//TODO:
-
-	pingThread("172.16.1.1", 1)
-
-	log.Println("Not implemented yet")
-}
-
-func runTraceroute(addr []string) {
-	log.Println("Not implemented yet")
-	//TODO:
-}
-
-func pingThread(addr string, id int) {
-	c, err := net.ListenPacket(icmpStringID, "0.0.0.0") // ICMP for IPv4
+	recvConn, err := net.ListenPacket(icmpStringID, "0.0.0.0") // ICMP for IPv4
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer c.Close()
-	p := ipv4.NewPacketConn(c)
+	defer recvConn.Close()
+	p := ipv4.NewPacketConn(recvConn)
 
+	// goroutines creating
+	var wg sync.WaitGroup
+	wg.Add(len(addr))
+	defer wg.Wait()
+
+	channels := make([]chan routineInfo, len(addr))
+	defer func() {
+		for _, el := range channels {
+			close(el)
+		}
+	}()
+
+	for i, el := range addr {
+		dataID := make([]byte, idLenBytes)
+		binary.LittleEndian.PutUint32(dataID, uint32(i+idRoutineDelta))
+		go pingThread(el, dataID, channels[i], &wg)
+	}
+
+	// swithing & waiting timeout
+	rb := make([]byte, 1500)
+	for {
+		select {
+		case <-appNeedClose:
+			// close all
+			return
+		default:
+		}
+
+		n, _, src, err := p.ReadFrom(rb)
+		if err != nil {
+			if err, ok := err.(net.Error); ok && err.Timeout() {
+				continue
+			}
+			log.Fatal(err)
+		}
+
+		rm, err := icmp.ParseMessage(icmpID, rb[:n])
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		var requiredIDData []byte
+		switch rm.Type {
+		case ipv4.ICMPTypeEchoReply:
+			requiredIDData = rm.Body.(*icmp.Echo).Data
+		case ipv4.ICMPTypeDestinationUnreachable:
+			requiredIDData = rm.Body.(*icmp.DstUnreach).Data
+		case ipv4.ICMPTypeTimeExceeded:
+			requiredIDData = rm.Body.(*icmp.TimeExceeded).Data
+		}
+
+		requiredID := int(binary.LittleEndian.Uint32(
+			requiredIDData[:idLenBytes])) - idRoutineDelta
+
+		if requiredID < len(channels) {
+			toSend := routineInfo{icmpMessage: rm, src: src}
+			channels[requiredID] <- toSend
+		}
+	}
+}
+
+func runTraceroute(addr []string, appNeedClose chan os.Signal) {
+	log.Println("Not implemented yet")
+	//TODO:
+}
+
+func pingThread(addr string, id []byte, channel chan routineInfo, wg *sync.WaitGroup) {
 	conn, err := net.Dial(icmpStringID, addr)
 	if err != nil {
 		log.Fatal(err)
@@ -89,13 +146,15 @@ func pingThread(addr string, id int) {
 	log.Printf("Local IP: %s", conn.LocalAddr().String())
 	log.Printf("Remote IP: %s", conn.RemoteAddr().String())
 
+	data := append(id, []byte("HELLO-FROM-IvAlex-Minsk")...)
+
 	wm := icmp.Message{
 		Type: ipv4.ICMPTypeEcho,
 		Code: 0,
 		Body: &icmp.Echo{
-			ID:   id,
+			ID:   27, //not specified by standard
 			Seq:  1,
-			Data: []byte("HELLO-R-U-THERE"),
+			Data: data,
 		},
 	}
 
@@ -107,29 +166,13 @@ func pingThread(addr string, id int) {
 		log.Fatal(err)
 	}
 
-	rb := make([]byte, 1500)
-	n, _, _, err := p.ReadFrom(rb)
-	if err != nil {
-		if err, ok := err.(net.Error); ok && err.Timeout() {
-		}
-		log.Fatal(err)
-	}
+	// switch rm.Type {
+	// case ipv4.ICMPTypeEchoReply:
+	// 	log.Printf("got reflection from %v", src)
+	// default:
+	// 	log.Printf("got %+v; want echo reply", rm)
+	// }
 
-	for _, element := range rb[:n] {
-		// element is the element from someSlice for where we are
-		fmt.Printf("%02X ", element)
-	}
-
-	rm, err := icmp.ParseMessage(icmpID, rb[:n])
-	if err != nil {
-		log.Fatal(err)
-	}
-	switch rm.Type {
-	case ipv4.ICMPTypeEchoReply:
-		log.Printf("got reflection from %v", conn.RemoteAddr())
-	default:
-		log.Printf("got %+v; want echo reply", rm)
-	}
-
+	wg.Done()
 	//TODO:
 }
