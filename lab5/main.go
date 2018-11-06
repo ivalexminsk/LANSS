@@ -147,10 +147,9 @@ func pingThread(addr string, id []byte, channel chan routineInfo, wg *sync.WaitG
 
 	ticker := time.NewTicker(pingPeriod)
 	transmitted := 0
-	received := 0
 	var rtt []time.Duration
 
-	defer printStats(addr, &received, &transmitted, &rtt)
+	defer printStats(addr, &transmitted, &rtt)
 
 	for {
 		select {
@@ -167,10 +166,15 @@ func pingThread(addr string, id []byte, channel chan routineInfo, wg *sync.WaitG
 				fmt.Printf("Response from %v: seq_id=%d, time=%v\n",
 					ans.src, ans.icmpMessage.Body.(*icmp.Echo).Seq,
 					t)
-
-				received++
+			case ipv4.ICMPTypeDestinationUnreachable:
+				fmt.Printf("Destination host %v unreachable (from %v)\n",
+					addr, ans.src)
+			case ipv4.ICMPTypeTimeExceeded:
+				fmt.Printf("Host %v ping TTL = 0 (from %v)\n",
+					addr, ans.src)
 			default:
-				log.Printf("got %+v; want echo reply\n", ans.icmpMessage)
+				log.Printf("Unsupported message type %v when host %v is pinged\n",
+					ans.icmpMessage.Type, addr)
 			}
 
 		case <-ticker.C:
@@ -180,15 +184,16 @@ func pingThread(addr string, id []byte, channel chan routineInfo, wg *sync.WaitG
 	}
 }
 
-func printStats(addr string, received *int, transmitted *int, rtt *[]time.Duration) {
+func printStats(addr string, transmitted *int, rtt *[]time.Duration) {
 	// division by zero blocking
 	if *transmitted == 0 {
 		*transmitted = 1
 	}
 
-	loss := 100 - (*received * 100 / *transmitted)
+	received := len(*rtt)
+	loss := 100 - (received * 100 / *transmitted)
 	var min, max, avg time.Duration
-	if len(*rtt) > 0 {
+	if received > 0 {
 		min = (*rtt)[0]
 		max = min
 
@@ -207,7 +212,7 @@ func printStats(addr string, received *int, transmitted *int, rtt *[]time.Durati
 	}
 
 	fmt.Printf("%v statistics: %d transmitted, %d received, %d%% loss, rtt min/avg/max = %v/%v/%v\n",
-		addr, *transmitted, *received, loss, min, avg, max)
+		addr, *transmitted, received, loss, min, avg, max)
 }
 
 func sendPingMessage(conn net.Conn, id []byte, dataSuffix []byte, seqID int) {
