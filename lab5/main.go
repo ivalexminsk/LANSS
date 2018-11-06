@@ -154,15 +154,18 @@ func pingThread(addr string, id []byte, channel chan routineInfo, wg *sync.WaitG
 	ticker := time.NewTicker(pingPeriod)
 	for {
 		select {
-		case ans := <-channel:
-			fmt.Println(ans)
+		case ans, ok := <-channel:
+			if !ok {
+				log.Printf("Routine close (addr %s)\n", addr)
+				return
+			}
 
-			// switch rm.Type {
-			// case ipv4.ICMPTypeEchoReply:
-			// 	log.Printf("got reflection from %v", src)
-			// default:
-			// 	log.Printf("got %+v; want echo reply", rm)
-			// }
+			switch ans.icmpMessage.Type {
+			case ipv4.ICMPTypeEchoReply:
+				log.Printf("got reflection from %v", ans.src)
+			default:
+				log.Printf("got %+v; want echo reply", ans.icmpMessage)
+			}
 
 		case <-ticker.C:
 			wm := icmp.Message{
