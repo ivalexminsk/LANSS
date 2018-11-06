@@ -95,7 +95,6 @@ func runPing(addr []string, appNeedClose chan os.Signal) {
 		go pingThread(el, dataID, channels[i], &wg)
 	}
 
-	// swithing & waiting timeout
 	runSwitching(p, appNeedClose, func(id int, ri routineInfo) {
 		if id < len(channels) {
 			channels[id] <- ri
@@ -144,7 +143,7 @@ func pingThread(addr string, id []byte, channel chan routineInfo, wg *sync.WaitG
 	}
 	defer conn.Close()
 
-	dataSuffix := []byte("HELLO-FROM-IvAlex-Minsk")
+	dataSuffix := []byte("HELLO-FROM-IvAlex-Minsk-ping")
 
 	ticker := time.NewTicker(pingPeriod)
 	i := beginPingSeqValue
@@ -166,32 +165,37 @@ func pingThread(addr string, id []byte, channel chan routineInfo, wg *sync.WaitG
 			}
 
 		case <-ticker.C:
-			data := append(id, timeToByteArr(time.Now())...)
-			data = append(data, dataSuffix...)
-
-			wm := icmp.Message{
-				Type: ipv4.ICMPTypeEcho,
-				Code: 0,
-				Body: &icmp.Echo{
-					ID:   27, //not specified by standard
-					Seq:  i,
-					Data: data,
-				},
-			}
-
-			wb, err := wm.Marshal(nil)
-			if err != nil {
-				log.Fatal(err)
-			}
-			if _, err := conn.Write(wb); err != nil {
-				log.Fatal(err)
-			}
-
+			sendPingMessage(conn, id, dataSuffix, i)
 			i++
-		default:
 		}
 	}
-	//TODO:
+}
+
+func sendPingMessage(conn net.Conn, id []byte, dataSuffix []byte, seqID int) {
+	data := make([]byte, int64Len)
+	nsec := time.Now().UnixNano()
+	binary.LittleEndian.PutUint64(data, uint64(nsec))
+
+	data = append(id, data...)
+	data = append(data, dataSuffix...)
+
+	wm := icmp.Message{
+		Type: ipv4.ICMPTypeEcho,
+		Code: 0,
+		Body: &icmp.Echo{
+			ID:   27, //not specified by standard
+			Seq:  seqID,
+			Data: data,
+		},
+	}
+
+	wb, err := wm.Marshal(nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if _, err := conn.Write(wb); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func messageSwitchParsing(rb []byte, src net.Addr) (ri routineInfo, reqID int, ok bool) {
@@ -232,15 +236,4 @@ func messageSwitchParsing(rb []byte, src net.Addr) (ri routineInfo, reqID int, o
 	ri = routineInfo{icmpMessage: rm, src: src, time: timestamp}
 
 	return
-}
-
-func timeToByteArr(t time.Time) []byte {
-	var arr []byte
-	buff := make([]byte, int64Len)
-
-	nsec := t.UnixNano()
-	binary.LittleEndian.PutUint64(buff, uint64(nsec))
-	arr = append(arr, buff...)
-
-	return arr
 }
