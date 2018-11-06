@@ -20,6 +20,7 @@ const icmpID = 1
 const icmpStringID = "ip4:icmp"
 const idRoutineDelta = 234
 const idLenBytes = 4
+const int64Len = 8
 const pingPeriod = time.Second * 1
 const switchBuffSize = 5
 
@@ -61,6 +62,7 @@ func main() {
 type routineInfo struct {
 	icmpMessage *icmp.Message
 	src         net.Addr
+	time        time.Time
 }
 
 func runPing(addr []string, appNeedClose chan os.Signal) {
@@ -125,11 +127,29 @@ func runPing(addr []string, appNeedClose chan os.Signal) {
 			requiredIDData = rm.Body.(*icmp.TimeExceeded).Data
 		}
 
+		if len(requiredIDData) < (idLenBytes + 2*int64Len) {
+			log.Println("Warning: unwaited data length")
+			continue
+		}
+
+		first := 0
+
 		requiredID := int(binary.LittleEndian.Uint32(
-			requiredIDData[:idLenBytes])) - idRoutineDelta
+			requiredIDData[first:(first+idLenBytes)])) - idRoutineDelta
+		first += idLenBytes
+
+		timeNSec := int64(binary.LittleEndian.Uint64(
+			requiredIDData[first:(first + int64Len)]))
+		first += int64Len
+
+		timeSec := int64(binary.LittleEndian.Uint64(
+			requiredIDData[first:(first + int64Len)]))
+
+		timestamp := time.Unix(timeSec, timeNSec)
 
 		if requiredID < len(channels) {
-			toSend := routineInfo{icmpMessage: rm, src: src}
+			toSend := routineInfo{icmpMessage: rm, src: src,
+				time: timestamp}
 			channels[requiredID] <- toSend
 		}
 	}
@@ -149,7 +169,7 @@ func pingThread(addr string, id []byte, channel chan routineInfo, wg *sync.WaitG
 	}
 	defer conn.Close()
 
-	data := append(id, []byte("HELLO-FROM-IvAlex-Minsk")...)
+	dataSuffix := []byte("HELLO-FROM-IvAlex-Minsk")
 
 	ticker := time.NewTicker(pingPeriod)
 	for {
@@ -162,12 +182,17 @@ func pingThread(addr string, id []byte, channel chan routineInfo, wg *sync.WaitG
 
 			switch ans.icmpMessage.Type {
 			case ipv4.ICMPTypeEchoReply:
-				log.Printf("got reflection from %v", ans.src)
+				log.Printf("got reflection from %v\n", ans.src)
 			default:
-				log.Printf("got %+v; want echo reply", ans.icmpMessage)
+				log.Printf("got %+v; want echo reply\n", ans.icmpMessage)
 			}
 
+			log.Println("Timestamp: ", ans.time)
+
 		case <-ticker.C:
+			data := append(id, timeToByteArr(time.Now())...)
+			data = append(data, dataSuffix...)
+
 			wm := icmp.Message{
 				Type: ipv4.ICMPTypeEcho,
 				Code: 0,
@@ -190,4 +215,19 @@ func pingThread(addr string, id []byte, channel chan routineInfo, wg *sync.WaitG
 		}
 	}
 	//TODO:
+}
+
+func timeToByteArr(t time.Time) []byte {
+	var arr []byte
+	buff := make([]byte, int64Len)
+
+	nsec := t.UnixNano()
+	binary.LittleEndian.PutUint64(buff, uint64(nsec))
+	arr = append(arr, buff...)
+
+	sec := t.Unix()
+	binary.LittleEndian.PutUint64(buff, uint64(sec))
+	arr = append(arr, buff...)
+
+	return arr
 }
