@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"sync"
+	"time"
 
 	"golang.org/x/net/icmp"
 	"golang.org/x/net/ipv4"
@@ -19,6 +20,8 @@ const icmpID = 1
 const icmpStringID = "ip4:icmp"
 const idRoutineDelta = 234
 const idLenBytes = 4
+const pingPeriod = time.Second * 1
+const switchBuffSize = 5
 
 func main() {
 	type Config struct {
@@ -85,6 +88,7 @@ func runPing(addr []string, appNeedClose chan os.Signal) {
 	for i, el := range addr {
 		dataID := make([]byte, idLenBytes)
 		binary.LittleEndian.PutUint32(dataID, uint32(i+idRoutineDelta))
+		channels[i] = make(chan routineInfo, switchBuffSize)
 		go pingThread(el, dataID, channels[i], &wg)
 	}
 
@@ -137,42 +141,50 @@ func runTraceroute(addr []string, appNeedClose chan os.Signal) {
 }
 
 func pingThread(addr string, id []byte, channel chan routineInfo, wg *sync.WaitGroup) {
+	defer wg.Done()
+
 	conn, err := net.Dial(icmpStringID, addr)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer conn.Close()
 
-	log.Printf("Local IP: %s", conn.LocalAddr().String())
-	log.Printf("Remote IP: %s", conn.RemoteAddr().String())
-
 	data := append(id, []byte("HELLO-FROM-IvAlex-Minsk")...)
 
-	wm := icmp.Message{
-		Type: ipv4.ICMPTypeEcho,
-		Code: 0,
-		Body: &icmp.Echo{
-			ID:   27, //not specified by standard
-			Seq:  1,
-			Data: data,
-		},
-	}
+	ticker := time.NewTicker(pingPeriod)
+	for {
+		select {
+		case ans := <-channel:
+			fmt.Println(ans)
 
-	wb, err := wm.Marshal(nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if _, err := conn.Write(wb); err != nil {
-		log.Fatal(err)
-	}
+			// switch rm.Type {
+			// case ipv4.ICMPTypeEchoReply:
+			// 	log.Printf("got reflection from %v", src)
+			// default:
+			// 	log.Printf("got %+v; want echo reply", rm)
+			// }
 
-	// switch rm.Type {
-	// case ipv4.ICMPTypeEchoReply:
-	// 	log.Printf("got reflection from %v", src)
-	// default:
-	// 	log.Printf("got %+v; want echo reply", rm)
-	// }
+		case <-ticker.C:
+			wm := icmp.Message{
+				Type: ipv4.ICMPTypeEcho,
+				Code: 0,
+				Body: &icmp.Echo{
+					ID:   27, //not specified by standard
+					Seq:  1,
+					Data: data,
+				},
+			}
 
-	wg.Done()
+			wb, err := wm.Marshal(nil)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if _, err := conn.Write(wb); err != nil {
+				log.Fatal(err)
+			}
+
+		default:
+		}
+	}
 	//TODO:
 }
