@@ -146,29 +146,68 @@ func pingThread(addr string, id []byte, channel chan routineInfo, wg *sync.WaitG
 	dataSuffix := []byte("HELLO-FROM-IvAlex-Minsk-ping")
 
 	ticker := time.NewTicker(pingPeriod)
-	i := beginPingSeqValue
+	transmitted := 0
+	received := 0
+	var rtt []time.Duration
+
+	defer printStats(addr, &received, &transmitted, &rtt)
+
 	for {
 		select {
 		case ans, ok := <-channel:
 			if !ok {
-				log.Printf("Routine close (addr %s)\n", addr)
 				return
 			}
 
 			switch ans.icmpMessage.Type {
 			case ipv4.ICMPTypeEchoReply:
+				t := time.Since(ans.time)
+				rtt = append(rtt, t)
+
 				fmt.Printf("Response from %v: seq_id=%d, time=%v\n",
 					ans.src, ans.icmpMessage.Body.(*icmp.Echo).Seq,
-					time.Since(ans.time))
+					t)
+
+				received++
 			default:
 				log.Printf("got %+v; want echo reply\n", ans.icmpMessage)
 			}
 
 		case <-ticker.C:
-			sendPingMessage(conn, id, dataSuffix, i)
-			i++
+			transmitted++
+			sendPingMessage(conn, id, dataSuffix, transmitted)
 		}
 	}
+}
+
+func printStats(addr string, received *int, transmitted *int, rtt *[]time.Duration) {
+	// division by zero blocking
+	if *transmitted == 0 {
+		*transmitted = 1
+	}
+
+	loss := 100 - (*received * 100 / *transmitted)
+	var min, max, avg time.Duration
+	if len(*rtt) > 0 {
+		min = (*rtt)[0]
+		max = min
+
+		for _, e := range *rtt {
+			if min > e {
+				min = e
+			}
+			if max < e {
+				max = e
+			}
+
+			avg += e
+		}
+
+		avg /= time.Duration(len(*rtt))
+	}
+
+	fmt.Printf("%v statistics: %d transmitted, %d received, %d%% loss, rtt min/avg/max = %v/%v/%v\n",
+		addr, *transmitted, *received, loss, min, avg, max)
 }
 
 func sendPingMessage(conn net.Conn, id []byte, dataSuffix []byte, seqID int) {
