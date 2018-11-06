@@ -23,6 +23,7 @@ const idLenBytes = 4
 const int64Len = 8
 const pingPeriod = time.Second * 1
 const switchBuffSize = 5
+const beginPingSeqValue = 1
 
 func main() {
 	type Config struct {
@@ -168,6 +169,7 @@ func pingThread(addr string, id []byte, channel chan routineInfo, wg *sync.WaitG
 	dataSuffix := []byte("HELLO-FROM-IvAlex-Minsk")
 
 	ticker := time.NewTicker(pingPeriod)
+	i := beginPingSeqValue
 	for {
 		select {
 		case ans, ok := <-channel:
@@ -178,7 +180,9 @@ func pingThread(addr string, id []byte, channel chan routineInfo, wg *sync.WaitG
 
 			switch ans.icmpMessage.Type {
 			case ipv4.ICMPTypeEchoReply:
-				fmt.Printf("Response from %v: seq_id=%d, time=%v\n", ans.src, ans.icmpMessage.Body.(*icmp.Echo).Seq, time.Since(ans.time))
+				fmt.Printf("Response from %v: seq_id=%d, time=%v\n",
+					ans.src, ans.icmpMessage.Body.(*icmp.Echo).Seq,
+					time.Since(ans.time))
 			default:
 				log.Printf("got %+v; want echo reply\n", ans.icmpMessage)
 			}
@@ -192,7 +196,7 @@ func pingThread(addr string, id []byte, channel chan routineInfo, wg *sync.WaitG
 				Code: 0,
 				Body: &icmp.Echo{
 					ID:   27, //not specified by standard
-					Seq:  1,
+					Seq:  i,
 					Data: data,
 				},
 			}
@@ -205,6 +209,7 @@ func pingThread(addr string, id []byte, channel chan routineInfo, wg *sync.WaitG
 				log.Fatal(err)
 			}
 
+			i++
 		default:
 		}
 	}
