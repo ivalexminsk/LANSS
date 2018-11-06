@@ -140,12 +140,8 @@ func runPing(addr []string, appNeedClose chan os.Signal) {
 
 		timeNSec := int64(binary.LittleEndian.Uint64(
 			requiredIDData[first:(first + int64Len)]))
-		first += int64Len
 
-		timeSec := int64(binary.LittleEndian.Uint64(
-			requiredIDData[first:(first + int64Len)]))
-
-		timestamp := time.Unix(timeSec, timeNSec)
+		timestamp := time.Unix(0, timeNSec)
 
 		if requiredID < len(channels) {
 			toSend := routineInfo{icmpMessage: rm, src: src,
@@ -182,12 +178,10 @@ func pingThread(addr string, id []byte, channel chan routineInfo, wg *sync.WaitG
 
 			switch ans.icmpMessage.Type {
 			case ipv4.ICMPTypeEchoReply:
-				log.Printf("got reflection from %v\n", ans.src)
+				fmt.Printf("Response from %v: seq_id=%d, time=%v\n", ans.src, ans.icmpMessage.Body.(*icmp.Echo).Seq, time.Since(ans.time))
 			default:
 				log.Printf("got %+v; want echo reply\n", ans.icmpMessage)
 			}
-
-			log.Println("Timestamp: ", ans.time)
 
 		case <-ticker.C:
 			data := append(id, timeToByteArr(time.Now())...)
@@ -223,10 +217,6 @@ func timeToByteArr(t time.Time) []byte {
 
 	nsec := t.UnixNano()
 	binary.LittleEndian.PutUint64(buff, uint64(nsec))
-	arr = append(arr, buff...)
-
-	sec := t.Unix()
-	binary.LittleEndian.PutUint64(buff, uint64(sec))
 	arr = append(arr, buff...)
 
 	return arr
