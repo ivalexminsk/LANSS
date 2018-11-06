@@ -96,6 +96,14 @@ func runPing(addr []string, appNeedClose chan os.Signal) {
 	}
 
 	// swithing & waiting timeout
+	runSwitching(p, appNeedClose, func(id int, ri routineInfo) {
+		if id < len(channels) {
+			channels[id] <- ri
+		}
+	})
+}
+
+func runSwitching(p *ipv4.PacketConn, appNeedClose chan os.Signal, cb func(id int, ri routineInfo)) {
 	rb := make([]byte, 1500)
 	for {
 		select {
@@ -113,42 +121,12 @@ func runPing(addr []string, appNeedClose chan os.Signal) {
 			log.Fatal(err)
 		}
 
-		rm, err := icmp.ParseMessage(icmpID, rb[:n])
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		var requiredIDData []byte
-		switch rm.Type {
-		case ipv4.ICMPTypeEchoReply:
-			requiredIDData = rm.Body.(*icmp.Echo).Data
-		case ipv4.ICMPTypeDestinationUnreachable:
-			requiredIDData = rm.Body.(*icmp.DstUnreach).Data
-		case ipv4.ICMPTypeTimeExceeded:
-			requiredIDData = rm.Body.(*icmp.TimeExceeded).Data
-		}
-
-		if len(requiredIDData) < (idLenBytes + 2*int64Len) {
-			log.Println("Warning: unwaited data length")
+		toSend, requiredID, ok := messageSwitchParsing(rb[:n], src)
+		if !ok {
 			continue
 		}
 
-		first := 0
-
-		requiredID := int(binary.LittleEndian.Uint32(
-			requiredIDData[first:(first+idLenBytes)])) - idRoutineDelta
-		first += idLenBytes
-
-		timeNSec := int64(binary.LittleEndian.Uint64(
-			requiredIDData[first:(first + int64Len)]))
-
-		timestamp := time.Unix(0, timeNSec)
-
-		if requiredID < len(channels) {
-			toSend := routineInfo{icmpMessage: rm, src: src,
-				time: timestamp}
-			channels[requiredID] <- toSend
-		}
+		cb(requiredID, toSend)
 	}
 }
 
@@ -214,6 +192,46 @@ func pingThread(addr string, id []byte, channel chan routineInfo, wg *sync.WaitG
 		}
 	}
 	//TODO:
+}
+
+func messageSwitchParsing(rb []byte, src net.Addr) (ri routineInfo, reqID int, ok bool) {
+	ok = true
+
+	rm, err := icmp.ParseMessage(icmpID, rb)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var requiredIDData []byte
+	switch rm.Type {
+	case ipv4.ICMPTypeEchoReply:
+		requiredIDData = rm.Body.(*icmp.Echo).Data
+	case ipv4.ICMPTypeDestinationUnreachable:
+		requiredIDData = rm.Body.(*icmp.DstUnreach).Data
+	case ipv4.ICMPTypeTimeExceeded:
+		requiredIDData = rm.Body.(*icmp.TimeExceeded).Data
+	}
+
+	if len(requiredIDData) < (idLenBytes + 2*int64Len) {
+		log.Println("Warning: unwaited data length")
+		ok = false
+		return
+	}
+
+	first := 0
+
+	reqID = int(binary.LittleEndian.Uint32(
+		requiredIDData[first:(first+idLenBytes)])) - idRoutineDelta
+	first += idLenBytes
+
+	timeNSec := int64(binary.LittleEndian.Uint64(
+		requiredIDData[first:(first + int64Len)]))
+
+	timestamp := time.Unix(0, timeNSec)
+
+	ri = routineInfo{icmpMessage: rm, src: src, time: timestamp}
+
+	return
 }
 
 func timeToByteArr(t time.Time) []byte {
