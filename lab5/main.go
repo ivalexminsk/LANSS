@@ -120,8 +120,11 @@ func runSwitching(p *ipv4.PacketConn, appNeedClose chan os.Signal, cb func(id in
 			log.Fatal(err)
 		}
 
-		toSend, requiredID, ok := messageSwitchParsing(rb[:n], src)
+		rbReseived := rb[:n]
+
+		toSend, requiredID, ok := messageSwitchParsing(rbReseived, src)
 		if !ok {
+			log.Println("Cannot parse message: ", rbReseived)
 			continue
 		}
 
@@ -258,6 +261,9 @@ func messageSwitchParsing(rb []byte, src net.Addr) (ri routineInfo, reqID int, o
 		requiredIDData = rm.Body.(*icmp.DstUnreach).Data
 	case ipv4.ICMPTypeTimeExceeded:
 		requiredIDData = rm.Body.(*icmp.TimeExceeded).Data
+	default:
+		ok = false
+		return
 	}
 
 	if len(requiredIDData) < (idLenBytes + 2*int64Len) {
