@@ -29,6 +29,7 @@ func main() {
 	type Config struct {
 		Mode      string   `json:"mode"`
 		Addresses []string `json:"addresses"`
+		TraceAddr string   `json:"traceAddress"`
 	}
 
 	if len(os.Args) < 2 {
@@ -53,7 +54,7 @@ func main() {
 		runPing(c.Addresses, appNeedClose)
 		break
 	case "traceroute":
-		runTraceroute(c.Addresses, appNeedClose)
+		runTraceroute(c.TraceAddr, appNeedClose)
 		break
 	default:
 		log.Fatal("Unsupported mode")
@@ -130,11 +131,6 @@ func runSwitching(p *ipv4.PacketConn, appNeedClose chan os.Signal, cb func(id in
 
 		cb(requiredID, toSend)
 	}
-}
-
-func runTraceroute(addr []string, appNeedClose chan os.Signal) {
-	log.Println("Not implemented yet")
-	//TODO:
 }
 
 func pingThread(addr string, id []byte, channel chan routineInfo, wg *sync.WaitGroup) {
@@ -286,4 +282,84 @@ func messageSwitchParsing(rb []byte, src net.Addr) (ri routineInfo, reqID int, o
 	ri = routineInfo{icmpMessage: rm, src: src, time: timestamp}
 
 	return
+}
+
+func runTraceroute(addr string, appNeedClose chan os.Signal) {
+	fmt.Println("Traceroute mode was selected")
+
+	recvConn, err := net.ListenPacket(icmpStringID, "0.0.0.0") // ICMP for IPv4
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer recvConn.Close()
+	p := ipv4.NewPacketConn(recvConn)
+
+	// goroutines creating
+	var wg sync.WaitGroup
+	wg.Add(len(addr))
+	defer wg.Wait()
+
+	channel := make(chan routineInfo, switchBuffSize)
+	defer close(channel)
+
+	dataID := make([]byte, idLenBytes)
+	binary.LittleEndian.PutUint32(dataID, uint32(idRoutineDelta))
+	go traceThread(addr, dataID, channel, &wg)
+
+	runSwitching(p, appNeedClose, func(id int, ri routineInfo) {
+		if id < 1 {
+			channel <- ri
+		}
+	})
+}
+
+func traceThread(addr string, id []byte, channel chan routineInfo, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	conn, err := net.Dial(icmpStringID, addr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer conn.Close()
+
+	dataSuffix := []byte("HELLO-FROM-IvAlex-Minsk-traceroute")
+
+	ticker := time.NewTicker(pingPeriod)
+	transmitted := 0
+	var rtt []time.Duration
+
+	// defer printStats(addr, &transmitted, &rtt)
+
+	for {
+		select {
+		case ans, ok := <-channel:
+			if !ok {
+				return
+			}
+
+			switch ans.icmpMessage.Type {
+			case ipv4.ICMPTypeEchoReply:
+				t := time.Since(ans.time)
+				rtt = append(rtt, t)
+
+				fmt.Printf("Response from %v: seq_id=%d, time=%v\n",
+					ans.src, ans.icmpMessage.Body.(*icmp.Echo).Seq,
+					t)
+			case ipv4.ICMPTypeDestinationUnreachable:
+				fmt.Printf("Destination host %v unreachable (from %v)\n",
+					addr, ans.src)
+			case ipv4.ICMPTypeTimeExceeded:
+				fmt.Printf("Host %v ping TTL = 0 (from %v)\n",
+					addr, ans.src)
+			default:
+				log.Printf("Unsupported message type %v when host %v is pinged\n",
+					ans.icmpMessage.Type, addr)
+			}
+
+		case <-ticker.C:
+			transmitted++
+
+			sendPingMessage(conn, id, dataSuffix, transmitted)
+		}
+	}
 }
