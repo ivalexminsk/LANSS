@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -266,17 +267,9 @@ func messageSwitchParsing(rb []byte, src net.Addr) (ri routineInfo, reqID int, o
 		log.Fatal(err)
 	}
 
-	var requiredIDData []byte
-	switch rm.Type {
-	case ipv4.ICMPTypeEchoReply:
-		requiredIDData = rm.Body.(*icmp.Echo).Data
-	case ipv4.ICMPTypeDestinationUnreachable:
-		requiredIDData = rm.Body.(*icmp.DstUnreach).Data
-	case ipv4.ICMPTypeTimeExceeded:
-		requiredIDData = rm.Body.(*icmp.TimeExceeded).Data
-	default:
-		ok = false
-		return
+	requiredIDData, err := getICMPData(rm)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	if len(requiredIDData) < (idLenBytes + 2*int64Len) {
@@ -297,6 +290,44 @@ func messageSwitchParsing(rb []byte, src net.Addr) (ri routineInfo, reqID int, o
 	timestamp := time.Unix(0, timeNSec)
 
 	ri = routineInfo{icmpMessage: rm, src: src, time: timestamp}
+
+	return
+}
+
+func getICMPData(rm *icmp.Message) (icmpData []byte, err error) {
+
+	switch rm.Type {
+	case ipv4.ICMPTypeEcho:
+		fallthrough
+	case ipv4.ICMPTypeEchoReply:
+		icmpData = rm.Body.(*icmp.Echo).Data
+	case ipv4.ICMPTypeDestinationUnreachable:
+		icmpData = rm.Body.(*icmp.DstUnreach).Data
+
+		icmpData, err = parseIPPacketToICMPData(icmpData)
+
+	case ipv4.ICMPTypeTimeExceeded:
+		icmpData = rm.Body.(*icmp.TimeExceeded).Data
+	default:
+		err = errors.New("Unsupported ICMP packet type")
+	}
+	return
+}
+
+func parseIPPacketToICMPData(ipPacket []byte) (icmpData []byte, err error) {
+	h, err := ipv4.ParseHeader(ipPacket)
+	if err != nil {
+		return
+	}
+	if h.Protocol != icmpID {
+		err = errors.New("Not ICMP protocol")
+	}
+
+	rm, err := icmp.ParseMessage(icmpID, ipPacket[h.Len:])
+	if err != nil {
+		return
+	}
+	icmpData, err = getICMPData(rm)
 
 	return
 }
