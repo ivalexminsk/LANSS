@@ -24,6 +24,7 @@ const int64Len = 8
 const pingPeriod = time.Second * 1
 const switchBuffSize = 5
 const beginPingSeqValue = 1
+const ttlErrorValue = -1
 
 func main() {
 	type Config struct {
@@ -65,6 +66,7 @@ type routineInfo struct {
 	icmpMessage *icmp.Message
 	src         net.Addr
 	time        time.Time
+	ttl         int
 }
 
 func runPing(addr []string, appNeedClose chan os.Signal) {
@@ -99,12 +101,21 @@ func runPing(addr []string, appNeedClose chan os.Signal) {
 	runSwitching(p, appNeedClose, func(id int, ri routineInfo) {
 		if id < len(channels) {
 			channels[id] <- ri
+		} else {
+			log.Println("Unsupported channel ID. Message: ", ri)
 		}
 	})
 }
 
 func runSwitching(p *ipv4.PacketConn, appNeedClose chan os.Signal, cb func(id int, ri routineInfo)) {
 	rb := make([]byte, 1500)
+
+	// emable all (simplier)
+	err := p.SetControlMessage(ipv4.FlagTTL|ipv4.FlagSrc|ipv4.FlagDst|ipv4.FlagInterface, true)
+	if err != nil {
+		log.Println("Cannot enable ttl feature: ", err)
+	}
+
 	for {
 		select {
 		case <-appNeedClose:
@@ -113,7 +124,7 @@ func runSwitching(p *ipv4.PacketConn, appNeedClose chan os.Signal, cb func(id in
 		default:
 		}
 
-		n, _, src, err := p.ReadFrom(rb)
+		n, cm, src, err := p.ReadFrom(rb)
 		if err != nil {
 			if err, ok := err.(net.Error); ok && err.Timeout() {
 				continue
@@ -127,6 +138,12 @@ func runSwitching(p *ipv4.PacketConn, appNeedClose chan os.Signal, cb func(id in
 		if !ok {
 			log.Println("Cannot parse message: ", rbReseived)
 			continue
+		}
+
+		if cm != nil {
+			toSend.ttl = cm.TTL
+		} else {
+			toSend.ttl = ttlErrorValue
 		}
 
 		cb(requiredID, toSend)
@@ -162,9 +179,9 @@ func pingThread(addr string, id []byte, channel chan routineInfo, wg *sync.WaitG
 				t := time.Since(ans.time)
 				rtt = append(rtt, t)
 
-				fmt.Printf("Response from %v: seq_id=%d, time=%v\n",
+				fmt.Printf("Response from %v: seq_id=%d, time=%v, ttl=%v\n",
 					ans.src, ans.icmpMessage.Body.(*icmp.Echo).Seq,
-					t)
+					t, ans.ttl)
 			case ipv4.ICMPTypeDestinationUnreachable:
 				fmt.Printf("Destination host %v unreachable (from %v)\n",
 					addr, ans.src)
