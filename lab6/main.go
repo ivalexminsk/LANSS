@@ -2,15 +2,20 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
 	"os"
 	"os/signal"
+	"sync"
+	"time"
 )
 
 const udpNet = "udp"
 const allAddr = "0.0.0.0"
+const recvBuff = 2048
+const recvTimeout = time.Second * 1
 
 func main() {
 	type Config struct {
@@ -35,17 +40,23 @@ func main() {
 	appNeedClose := make(chan os.Signal, 1)
 	signal.Notify(appNeedClose, os.Interrupt)
 
+	fmt.Println("Press Ctrl+C to exit")
+
 	switch c.Mode {
 	case "multicast":
 		log.Fatal("Not implemented yet")
 	case "broadcast":
-		runBroadcast(c.Port)
+		runBroadcast(c.Port, appNeedClose)
 	default:
-		log.Fatal("Unsupported mode", c.Mode)
+		log.Fatal("Unsupported mode ", c.Mode)
 	}
+
+	fmt.Println("Bye")
 }
 
-func runBroadcast(port int) {
+func runBroadcast(port int, exitDetect chan os.Signal) {
+	fmt.Println("Broadcast mode was selected. Working on port", port)
+
 	udpaddr := net.UDPAddr{
 		IP:   net.ParseIP(allAddr),
 		Port: port,
@@ -57,13 +68,59 @@ func runBroadcast(port int) {
 
 	defer conn.Close()
 
-	buff := make([]byte, 1024)
-	for {
-		n, src, err := conn.ReadFrom(buff)
-		if err != nil {
-			log.Fatal(err)
-		}
+	var wg sync.WaitGroup
+	wg.Add(2)
 
-		log.Printf("From %v: %s", src, string(buff[:n]))
+	recvChan := make(chan bool, 1)
+	userWaitChan := make(chan bool, 1)
+
+	go asyncRecvEcho(conn, recvChan, &wg)
+	go asyncUserInput(conn, userWaitChan, &wg)
+
+	//wait for end
+	<-exitDetect
+
+	//need to stop
+	recvChan <- true
+	userWaitChan <- true
+
+	wg.Wait()
+}
+
+func asyncRecvEcho(conn *net.UDPConn, exitDetect chan bool, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	buff := make([]byte, recvBuff)
+
+	for {
+		select {
+		case <-exitDetect:
+			return
+		default:
+			err := conn.SetReadDeadline(time.Now().Add(recvTimeout))
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			n, src, err := conn.ReadFrom(buff)
+			if err != nil {
+				if e, ok := err.(net.Error); ok && e.Timeout() {
+					//it's a timeout
+					break
+				}
+
+				log.Fatal(err)
+			}
+
+			log.Printf("From %v: %s", src, string(buff[:n]))
+		}
 	}
+}
+
+func asyncUserInput(conn *net.UDPConn, exitDetect chan bool, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	<-exitDetect
+
+	//TODO:
 }
