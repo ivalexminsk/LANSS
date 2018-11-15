@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -17,6 +18,7 @@ const allAddr = "0.0.0.0"
 const recvBuff = 2048
 const recvTimeout = time.Second * 1
 const consoleReadLineBuffSize = 3
+const inputDelim = '\n'
 
 const (
 	protoConn    byte = 'c'
@@ -144,16 +146,24 @@ func asyncUserInput(conn *net.UDPConn, exitDetect chan bool, wg *sync.WaitGroup)
 }
 
 func asyncConsoleRead(readInfo chan string) {
-	var str string
+	reader := bufio.NewReader(os.Stdin)
 	for {
-		fmt.Scanln(str)
+		str, err := reader.ReadString(inputDelim)
+		if err != nil {
+			log.Fatal(err)
+		}
 		readInfo <- str
 	}
 }
 
 func sendRaw(conn *net.UDPConn, bs []byte) {
-	// conn.WriteTo()
-	//TODO:
+	udpaddr := net.UDPAddr{
+		IP:   net.ParseIP("127.0.0.1"),
+		Port: 27002,
+	}
+
+	conn.WriteToUDP(bs, &udpaddr)
+	//TODO: fix
 }
 
 func sendConn(conn *net.UDPConn) {
