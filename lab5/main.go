@@ -375,8 +375,10 @@ func runTraceroute(addr string, appNeedClose chan os.Signal) {
 			return
 		default:
 			//send trace message
+
+			//used for last message
 			traceID := make([]byte, idLenBytes)
-			binary.LittleEndian.PutUint32(traceID, uint32(i))
+			binary.LittleEndian.PutUint32(traceID, uint32(i+idRoutineDelta))
 
 			err := p.SetTTL(i)
 			if err != nil {
@@ -498,5 +500,5 @@ func printTraceInfo(id int, src net.Addr, delta time.Duration) {
 }
 
 func printTraceInfoTimeout(seqID int) {
-	fmt.Printf("%d.\t*\tTimeout\n", seqID)
+	fmt.Printf("%d.\t*\t\tTimeout\n", seqID)
 }
