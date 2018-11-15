@@ -26,6 +26,9 @@ const (
 	protoMessage byte = 'm'
 )
 
+// used to send & recv in broadcast mode
+var bcastPort int
+
 func main() {
 	type Config struct {
 		Mode          string `json:"mode"`
@@ -76,6 +79,7 @@ func runBroadcast(port int, exitDetect chan os.Signal) {
 	}
 
 	defer conn.Close()
+	bcastPort = port
 
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -156,28 +160,33 @@ func asyncConsoleRead(readInfo chan string) {
 	}
 }
 
+type ifInfo struct {
+	ip    net.IP
+	mask  net.IPMask
+	iface net.Interface
+}
+
 func sendRaw(conn *net.UDPConn, bs []byte) {
-	getAllInterfaceIPs(func(ip net.IP, mask net.IPMask, i net.Interface) {
-		sendCallBack(ip, mask, i, conn, bs)
+	getAllInterfaceIPs(func(ii ifInfo) {
+		sendCallBack(ii, conn, bs)
 	})
 }
 
-func sendCallBack(ip net.IP, mask net.IPMask, i net.Interface, conn *net.UDPConn, bs []byte) {
-	ip = ip.Mask(mask)
+func sendCallBack(ii ifInfo, conn *net.UDPConn, bs []byte) {
+	ip := ii.ip.Mask(ii.mask)
 
 	if len(ip) != net.IPv4len {
 		return
 	}
 
-	bcIP := getIPBroadcast(ip, mask)
+	bcIP := getIPBroadcast(ip, ii.mask)
 
 	udpaddr := net.UDPAddr{
 		IP:   bcIP,
-		Port: 27002,
+		Port: bcastPort,
 	}
 
 	conn.WriteToUDP(bs, &udpaddr)
-	//TODO: fix
 }
 
 func sendConn(conn *net.UDPConn) {
@@ -212,7 +221,7 @@ func parsePrintRecv(recv []byte, src net.Addr) {
 	}
 }
 
-func getAllInterfaceIPs(cb func(ip net.IP, mask net.IPMask, i net.Interface)) {
+func getAllInterfaceIPs(cb func(ii ifInfo)) {
 	ifaces, err := net.Interfaces()
 	if err != nil {
 		log.Fatal(err)
@@ -227,7 +236,13 @@ func getAllInterfaceIPs(cb func(ip net.IP, mask net.IPMask, i net.Interface)) {
 			switch v := a.(type) {
 			case *net.IPNet:
 				//only that address type supported
-				cb(v.IP, v.Mask, i)
+				ii := ifInfo{
+					ip:    v.IP,
+					mask:  v.Mask,
+					iface: i,
+				}
+
+				cb(ii)
 			}
 
 		}
