@@ -392,7 +392,10 @@ func runTraceroute(addr string, appNeedClose chan os.Signal) {
 				log.Fatal(err)
 			}
 
-			p.SetDeadline(time.Now().Add(traceMaxWaitPeriod))
+			err = p.SetReadDeadline(time.Now().Add(traceMaxWaitPeriod))
+			if err != nil {
+				log.Fatal(err)
+			}
 
 			n, _, src, err := p.ReadFrom(rb)
 			if err != nil {
