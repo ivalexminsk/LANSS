@@ -385,6 +385,8 @@ func runTraceroute(addr string, appNeedClose chan os.Signal) {
 
 			msg := makePingMessage(traceID, dataSuffix, i)
 
+			startT := time.Now()
+
 			_, err = p.WriteTo(msg, nil, &dstNet)
 			if err != nil {
 				log.Fatal(err)
@@ -401,6 +403,8 @@ func runTraceroute(addr string, appNeedClose chan os.Signal) {
 				log.Fatal(err)
 			}
 
+			deltaT := time.Since(startT)
+
 			rbCurr := rb[:n]
 			ans, id, ok := messageSwitchParsing(rbCurr, src)
 			if !ok {
@@ -408,19 +412,17 @@ func runTraceroute(addr string, appNeedClose chan os.Signal) {
 				continue
 			}
 
-			t := time.Since(ans.time)
-
 			switch ans.icmpMessage.Type {
 			case ipv4.ICMPTypeEchoReply:
-				printTraceInfo(id, ans.src, t)
+				printTraceInfo(id, ans.src, deltaT)
 				fmt.Printf("\nCompleted: success\n")
 				return
 			case ipv4.ICMPTypeDestinationUnreachable:
-				printTraceInfo(id, ans.src, t)
+				printTraceInfo(id, ans.src, deltaT)
 				fmt.Printf("\nCompleted: destination host unreachable\n")
 				return
 			case ipv4.ICMPTypeTimeExceeded:
-				printTraceInfo(id, ans.src, t)
+				printTraceInfo(id, ans.src, deltaT)
 			default:
 				log.Printf("Unsupported message type %v when host %v is traced\n",
 					ans.icmpMessage.Type, addr)
