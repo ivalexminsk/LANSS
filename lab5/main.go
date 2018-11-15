@@ -349,7 +349,6 @@ func runTraceroute(addr string, appNeedClose chan os.Signal) {
 	p := ipv4.NewPacketConn(recvConn)
 
 	dataSuffix := []byte("HELLO-FROM-IvAlex-Minsk-traceroute")
-	traceID := []byte{0x27, 0x1F, 0x57, 0x93}
 
 	dstNet, ok := resolveIP(addr)
 	if !ok {
@@ -368,6 +367,8 @@ func runTraceroute(addr string, appNeedClose chan os.Signal) {
 			return
 		default:
 			//send trace message
+			traceID := make([]byte, idLenBytes)
+			binary.LittleEndian.PutUint32(traceID, uint32(i))
 
 			err := p.SetTTL(i)
 			if err != nil {
@@ -386,37 +387,41 @@ func runTraceroute(addr string, appNeedClose chan os.Signal) {
 			n, _, src, err := p.ReadFrom(rb)
 			if err != nil {
 				if err, ok := err.(net.Error); ok && err.Timeout() {
-					fmt.Printf("%v\t*\n", i)
+					printTraceInfoTimeout(i)
 					continue
 				}
 				log.Fatal(err)
 			}
 
 			rbCurr := rb[:n]
-			ans, _, ok := messageSwitchParsing(rbCurr, src)
+			ans, id, ok := messageSwitchParsing(rbCurr, src)
 			if !ok {
 				log.Println("Error: cannot parse packet:", rbCurr)
+				continue
 			}
 
 			t := time.Since(ans.time)
 
 			switch ans.icmpMessage.Type {
 			case ipv4.ICMPTypeEchoReply:
-				printTraceInfo(ans, t)
+				printTraceInfo(id, ans.src, t)
 				fmt.Printf("\nCompleted: success\n")
 				return
 			case ipv4.ICMPTypeDestinationUnreachable:
-				printTraceInfo(ans, t)
+				printTraceInfo(id, ans.src, t)
 				fmt.Printf("\nCompleted: destination host unreachable\n")
 				return
 			case ipv4.ICMPTypeTimeExceeded:
-				printTraceInfo(ans, t)
+				printTraceInfo(id, ans.src, t)
 			default:
 				log.Printf("Unsupported message type %v when host %v is traced\n",
 					ans.icmpMessage.Type, addr)
 			}
 		}
 	}
+
+	log.Printf("Cannot reach host %v (%v) with %d hops\n",
+		dstNet.IP, addr, traceMaxHops)
 }
 
 func resolveIP(addr string) (dst net.IPAddr, ok bool) {
@@ -444,11 +449,10 @@ func resolveIP(addr string) (dst net.IPAddr, ok bool) {
 	return
 }
 
-func printTraceInfo(ans routineInfo, delta time.Duration) {
-	fmt.Printf("%d.\t%v\t%v\n",
-		ans.icmpMessage.Body.(*icmp.Echo).Seq, delta, ans.src)
+func printTraceInfo(id int, src net.Addr, delta time.Duration) {
+	fmt.Printf("%d.\t%v\t%v\n", id, delta, src)
 }
 
 func printTraceInfoTimeout(seqID int) {
-	fmt.Printf("%d.\t*\n", seqID)
+	fmt.Printf("%d.\t*\tTimeout\n", seqID)
 }
