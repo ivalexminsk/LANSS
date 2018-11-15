@@ -23,11 +23,12 @@ const idRoutineDelta = 234
 const idLenBytes = 4
 const int64Len = 8
 const pingPeriod = time.Second * 1
-const tracePeriod = time.Second * 1
+const traceMaxWaitPeriod = time.Second * 5
 const switchBuffSize = 5
 const beginPingSeqValue = 1
 const ttlErrorValue = -1
 const traceMaxHops = 30
+const ethMaxFrameLen = 1500
 
 func main() {
 	type Config struct {
@@ -111,7 +112,7 @@ func runPing(addr []string, appNeedClose chan os.Signal) {
 }
 
 func runSwitching(p *ipv4.PacketConn, appNeedClose chan os.Signal, cb func(id int, ri routineInfo)) {
-	rb := make([]byte, 1500)
+	rb := make([]byte, ethMaxFrameLen)
 
 	// emable all (simplier)
 	err := p.SetControlMessage(ipv4.FlagTTL|ipv4.FlagSrc|ipv4.FlagDst|ipv4.FlagInterface, true)
@@ -357,6 +358,7 @@ func runTraceroute(addr string, appNeedClose chan os.Signal) {
 
 	fmt.Printf("Traceroute %v (%s)\n", dstNet.IP, addr)
 
+	rb := make([]byte, ethMaxFrameLen)
 	// ticker := time.NewTicker(tracePeriod)
 	// var rtt []time.Duration
 
@@ -374,31 +376,46 @@ func runTraceroute(addr string, appNeedClose chan os.Signal) {
 
 			msg := makePingMessage(traceID, dataSuffix, i)
 
-			p.WriteTo(msg, nil, &dstNet)
+			_, err = p.WriteTo(msg, nil, &dstNet)
+			if err != nil {
+				log.Fatal(err)
+			}
 
-			// switch ans.icmpMessage.Type {
-			// case ipv4.ICMPTypeEchoReply:
-			// 	t := time.Since(ans.time)
-			// 	rtt = append(rtt, t)
+			p.SetDeadline(time.Now().Add(traceMaxWaitPeriod))
 
-			// 	fmt.Printf("Response from %v: seq_id=%d, time=%v\n",
-			// 		ans.src, ans.icmpMessage.Body.(*icmp.Echo).Seq,
-			// 		t)
-			// case ipv4.ICMPTypeDestinationUnreachable:
-			// 	fmt.Printf("Destination host %v unreachable (from %v)\n",
-			// 		addr, ans.src)
-			// case ipv4.ICMPTypeTimeExceeded:
-			// 	fmt.Printf("Host %v ping TTL = 0 (from %v)\n",
-			// 		addr, ans.src)
-			// default:
-			// 	log.Printf("Unsupported message type %v when host %v is pinged\n",
-			// 		ans.icmpMessage.Type, addr)
-			// }
+			n, _, src, err := p.ReadFrom(rb)
+			if err != nil {
+				if err, ok := err.(net.Error); ok && err.Timeout() {
+					fmt.Printf("%v\t*\n", i)
+					continue
+				}
+				log.Fatal(err)
+			}
 
-			//Temp
-			break
+			rbCurr := rb[:n]
+			ans, _, ok := messageSwitchParsing(rbCurr, src)
+			if !ok {
+				log.Println("Error: cannot parse packet:", rbCurr)
+			}
+
+			t := time.Since(ans.time)
+
+			switch ans.icmpMessage.Type {
+			case ipv4.ICMPTypeEchoReply:
+				printTraceInfo(ans, t)
+				fmt.Printf("\nCompleted: success\n")
+				return
+			case ipv4.ICMPTypeDestinationUnreachable:
+				printTraceInfo(ans, t)
+				fmt.Printf("\nCompleted: destination host unreachable\n")
+				return
+			case ipv4.ICMPTypeTimeExceeded:
+				printTraceInfo(ans, t)
+			default:
+				log.Printf("Unsupported message type %v when host %v is traced\n",
+					ans.icmpMessage.Type, addr)
+			}
 		}
-
 	}
 }
 
@@ -425,4 +442,13 @@ func resolveIP(addr string) (dst net.IPAddr, ok bool) {
 	}
 
 	return
+}
+
+func printTraceInfo(ans routineInfo, delta time.Duration) {
+	fmt.Printf("%d.\t%v\t%v\n",
+		ans.icmpMessage.Body.(*icmp.Echo).Seq, delta, ans.src)
+}
+
+func printTraceInfoTimeout(seqID int) {
+	fmt.Printf("%d.\t*\n", seqID)
 }
