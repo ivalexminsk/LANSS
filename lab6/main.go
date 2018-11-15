@@ -4,9 +4,13 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
+	"net"
 	"os"
 	"os/signal"
 )
+
+const udpNet = "udp"
+const allAddr = "0.0.0.0"
 
 func main() {
 	type Config struct {
@@ -33,8 +37,33 @@ func main() {
 
 	switch c.Mode {
 	case "multicast":
+		log.Fatal("Not implemented yet")
 	case "broadcast":
+		runBroadcast(c.Port)
 	default:
 		log.Fatal("Unsupported mode", c.Mode)
+	}
+}
+
+func runBroadcast(port int) {
+	udpaddr := net.UDPAddr{
+		IP:   net.ParseIP(allAddr),
+		Port: port,
+	}
+	conn, err := net.ListenUDP(udpNet, &udpaddr)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer conn.Close()
+
+	buff := make([]byte, 1024)
+	for {
+		n, src, err := conn.ReadFrom(buff)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		log.Printf("From %v: %s", src, string(buff[:n]))
 	}
 }
