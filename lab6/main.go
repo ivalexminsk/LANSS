@@ -157,8 +157,22 @@ func asyncConsoleRead(readInfo chan string) {
 }
 
 func sendRaw(conn *net.UDPConn, bs []byte) {
+	getAllInterfaceIPs(func(ip net.IP, mask net.IPMask, i net.Interface) {
+		sendCallBack(ip, mask, i, conn, bs)
+	})
+}
+
+func sendCallBack(ip net.IP, mask net.IPMask, i net.Interface, conn *net.UDPConn, bs []byte) {
+	ip = ip.Mask(mask)
+
+	if len(ip) != net.IPv4len {
+		return
+	}
+
+	bcIP := getIPBroadcast(ip, mask)
+
 	udpaddr := net.UDPAddr{
-		IP:   net.ParseIP("127.0.0.1"),
+		IP:   bcIP,
 		Port: 27002,
 	}
 
@@ -196,4 +210,38 @@ func parsePrintRecv(recv []byte, src net.Addr) {
 	default:
 		log.Println("Unknown packet key:", control)
 	}
+}
+
+func getAllInterfaceIPs(cb func(ip net.IP, mask net.IPMask, i net.Interface)) {
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, i := range ifaces {
+		addrs, err := i.Addrs()
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		for _, a := range addrs {
+			switch v := a.(type) {
+			case *net.IPNet:
+				//only that address type supported
+				cb(v.IP, v.Mask, i)
+			}
+
+		}
+	}
+}
+
+func getIPBroadcast(ip net.IP, mask net.IPMask) net.IP {
+	n := len(ip)
+	if n != len(mask) {
+		return nil
+	}
+	out := make(net.IP, n)
+	for i := 0; i < n; i++ {
+		out[i] = ip[i] | (^(mask[i]))
+	}
+	return out
 }
