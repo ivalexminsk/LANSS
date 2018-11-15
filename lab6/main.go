@@ -16,6 +16,13 @@ const udpNet = "udp"
 const allAddr = "0.0.0.0"
 const recvBuff = 2048
 const recvTimeout = time.Second * 1
+const consoleReadLineBuffSize = 3
+
+const (
+	protoConn    byte = 'c'
+	protoDisconn byte = 'd'
+	protoMessage byte = 'm'
+)
 
 func main() {
 	type Config struct {
@@ -92,6 +99,9 @@ func asyncRecvEcho(conn *net.UDPConn, exitDetect chan bool, wg *sync.WaitGroup) 
 
 	buff := make([]byte, recvBuff)
 
+	sendConn(conn)
+	defer sendDisconn(conn)
+
 	for {
 		select {
 		case <-exitDetect:
@@ -112,7 +122,7 @@ func asyncRecvEcho(conn *net.UDPConn, exitDetect chan bool, wg *sync.WaitGroup) 
 				log.Fatal(err)
 			}
 
-			log.Printf("From %v: %s", src, string(buff[:n]))
+			parsePrintRecv(buff[:n], src)
 		}
 	}
 }
@@ -120,7 +130,60 @@ func asyncRecvEcho(conn *net.UDPConn, exitDetect chan bool, wg *sync.WaitGroup) 
 func asyncUserInput(conn *net.UDPConn, exitDetect chan bool, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	<-exitDetect
+	readChan := make(chan string, consoleReadLineBuffSize)
+	go asyncConsoleRead(readChan)
 
+	for {
+		select {
+		case <-exitDetect:
+			return
+		case s := <-readChan:
+			sendMessage(conn, s)
+		}
+	}
+}
+
+func asyncConsoleRead(readInfo chan string) {
+	var str string
+	for {
+		fmt.Scanln(str)
+		readInfo <- str
+	}
+}
+
+func sendRaw(conn *net.UDPConn, bs []byte) {
+	// conn.WriteTo()
 	//TODO:
+}
+
+func sendConn(conn *net.UDPConn) {
+	sendRaw(conn, []byte{protoConn})
+}
+
+func sendDisconn(conn *net.UDPConn) {
+	sendRaw(conn, []byte{protoDisconn})
+}
+
+func sendMessage(conn *net.UDPConn, mess string) {
+	toSend := []byte{protoMessage}
+	toSend = append(toSend, []byte(mess)...)
+	sendRaw(conn, toSend)
+}
+
+func parsePrintRecv(recv []byte, src net.Addr) {
+	if len(recv) < 1 {
+		return
+	}
+
+	control := recv[0]
+	switch control {
+	case protoConn:
+		log.Println("Connected:", src)
+	case protoDisconn:
+		log.Println("Disconnected:", src)
+	case protoMessage:
+		log.Printf("From %v: %s", src, string(recv[1:]))
+	default:
+		log.Println("Unknown packet key:", control)
+	}
 }
