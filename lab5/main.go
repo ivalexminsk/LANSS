@@ -273,25 +273,33 @@ func messageSwitchParsing(rb []byte, src net.Addr) (ri routineInfo, reqID int, o
 		log.Fatal(err)
 	}
 
-	requiredIDData, err := getICMPData(rm)
-	if err != nil {
-		log.Fatal(err)
+	var timeNSec int64
+	if rm.Type == ipv4.ICMPTypeTimeExceeded {
+		reqID, err = getSubICMPSeqID(rm)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		requiredIDData, err := getICMPData(rm)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if len(requiredIDData) < (idLenBytes + 2*int64Len) {
+			log.Println("Warning: unwaited data length")
+			ok = false
+			return
+		}
+
+		first := 0
+
+		reqID = int(binary.LittleEndian.Uint32(
+			requiredIDData[first:(first+idLenBytes)])) - idRoutineDelta
+		first += idLenBytes
+
+		timeNSec = int64(binary.LittleEndian.Uint64(
+			requiredIDData[first:(first + int64Len)]))
 	}
-
-	if len(requiredIDData) < (idLenBytes + 2*int64Len) {
-		log.Println("Warning: unwaited data length")
-		ok = false
-		return
-	}
-
-	first := 0
-
-	reqID = int(binary.LittleEndian.Uint32(
-		requiredIDData[first:(first+idLenBytes)])) - idRoutineDelta
-	first += idLenBytes
-
-	timeNSec := int64(binary.LittleEndian.Uint64(
-		requiredIDData[first:(first + int64Len)]))
 
 	timestamp := time.Unix(0, timeNSec)
 
@@ -445,6 +453,37 @@ func resolveIP(addr string) (dst net.IPAddr, ok bool) {
 	if dst.IP != nil {
 		ok = true
 	}
+
+	return
+}
+
+func getSubICMPSeqID(rm *icmp.Message) (id int, err error) {
+	ipPacket, err := getICMPData(rm)
+	if err != nil {
+		return
+	}
+
+	h, err := ipv4.ParseHeader(ipPacket)
+	if err != nil {
+		return
+	}
+
+	if h.Protocol != icmpID {
+		err = errors.New("Not ICMP protocol")
+	}
+
+	rmSub, err := icmp.ParseMessage(icmpID, ipPacket[h.Len:])
+	if err != nil {
+		return
+	}
+
+	rmEcho, ok := rmSub.Body.(*icmp.Echo)
+	if !ok {
+		err = errors.New("SubElement is not ICMP Echo")
+		return
+	}
+
+	id = rmEcho.Seq
 
 	return
 }
