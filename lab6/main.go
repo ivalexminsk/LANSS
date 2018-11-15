@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -28,12 +29,14 @@ const (
 
 // used to send & recv in broadcast mode
 var bcastPort int
+var sendMac net.HardwareAddr
 
 func main() {
 	type Config struct {
 		Mode          string `json:"mode"`
 		MulticastAddr string `json:"multicast_addr"`
 		Port          int    `json:"net_port"`
+		HwMac         string `json:"hw_mac"`
 	}
 
 	if len(os.Args) < 2 {
@@ -51,6 +54,12 @@ func main() {
 
 	appNeedClose := make(chan os.Signal, 1)
 	signal.Notify(appNeedClose, os.Interrupt)
+
+	sendMacLocal, err := net.ParseMAC(c.HwMac)
+	if err != nil {
+		log.Fatal(err)
+	}
+	sendMac = sendMacLocal
 
 	fmt.Println("Press Ctrl+C to exit")
 
@@ -173,8 +182,15 @@ func sendRaw(conn *net.UDPConn, bs []byte) {
 }
 
 func sendCallBack(ii ifInfo, conn *net.UDPConn, bs []byte) {
+	// skip other hw interfaces
+	if !bytes.Equal(sendMac, ii.iface.HardwareAddr) {
+		return
+	}
+
+	// for corrent network length
 	ip := ii.ip.Mask(ii.mask)
 
+	//ignore not ipv4 addresses
 	if len(ip) != net.IPv4len {
 		return
 	}

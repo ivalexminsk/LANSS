@@ -1,4 +1,5 @@
 {
 	"mode": "broadcast",
+	"hw_mac" : "A4-34-D9-45-50-74",
 	"net_port": 27001
 }
