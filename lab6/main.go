@@ -29,7 +29,7 @@ const (
 
 // used to send & recv in broadcast mode
 var bcastPort int
-var sendMac net.HardwareAddr
+var sendIf ifInfo
 
 func main() {
 	type Config struct {
@@ -55,11 +55,10 @@ func main() {
 	appNeedClose := make(chan os.Signal, 1)
 	signal.Notify(appNeedClose, os.Interrupt)
 
-	sendMacLocal, err := net.ParseMAC(c.HwMac)
+	sendIf, err = getIntByHwMac(c.HwMac)
 	if err != nil {
 		log.Fatal(err)
 	}
-	sendMac = sendMacLocal
 
 	fmt.Println("Press Ctrl+C to exit")
 
@@ -176,26 +175,7 @@ type ifInfo struct {
 }
 
 func sendRaw(conn *net.UDPConn, bs []byte) {
-	getAllInterfaceIPs(func(ii ifInfo) {
-		sendCallBack(ii, conn, bs)
-	})
-}
-
-func sendCallBack(ii ifInfo, conn *net.UDPConn, bs []byte) {
-	// skip other hw interfaces
-	if !bytes.Equal(sendMac, ii.iface.HardwareAddr) {
-		return
-	}
-
-	// for corrent network length
-	ip := ii.ip.Mask(ii.mask)
-
-	//ignore not ipv4 addresses
-	if len(ip) != net.IPv4len {
-		return
-	}
-
-	bcIP := getIPBroadcast(ip, ii.mask)
+	bcIP := getIPBroadcast(sendIf.ip, sendIf.mask)
 
 	udpaddr := net.UDPAddr{
 		IP:   bcIP,
@@ -275,4 +255,56 @@ func getIPBroadcast(ip net.IP, mask net.IPMask) net.IP {
 		out[i] = ip[i] | (^(mask[i]))
 	}
 	return out
+}
+
+func getIntByHwMac(hwMac string) (ii ifInfo, err error) {
+	err = nil
+
+	mac, err := net.ParseMAC(hwMac)
+	if err != nil {
+		return
+	}
+
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+iface_start:
+	for _, i := range ifaces {
+		// skip other interfaces
+		if !bytes.Equal(i.HardwareAddr, mac) {
+			continue
+		}
+
+		addrs, err := i.Addrs()
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+
+		for _, a := range addrs {
+			switch v := a.(type) {
+			case *net.IPNet:
+
+				ip4 := v.IP.To4()
+				if ip4 == nil {
+					// skip ipv6 addrs
+					break
+				}
+
+				// use first addr only
+				ii = ifInfo{
+					ip:    ip4,
+					mask:  v.Mask,
+					iface: i,
+				}
+
+				break iface_start
+			}
+
+		}
+	}
+
+	return
 }
