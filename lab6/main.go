@@ -34,6 +34,7 @@ const (
 const (
 	userMessage            string = "send"
 	userDetectOtherClients string = "other"
+	userExit               string = "exit"
 )
 
 //interface to work with
@@ -171,6 +172,8 @@ func asyncUserInput(conn *net.UDPConn, exitDetect chan bool, wg *sync.WaitGroup)
 				sendMessage(conn, info.params)
 			case userDetectOtherClients:
 				detectOtherClients(conn)
+			case userExit:
+				selfExit()
 			default:
 				fmt.Printf("Command '%s' is not supported yet(\n", info.command)
 			}
@@ -251,6 +254,19 @@ func detectOtherClients(conn *net.UDPConn) {
 	fmt.Println("Other clients:")
 	for _, c := range currentClients {
 		fmt.Println(c.ip)
+	}
+}
+
+func selfExit() {
+	p, err := os.FindProcess(os.Getpid())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// send signal to self to gracefully exit (on linux). On windows => exit
+	err = p.Signal(os.Interrupt)
+	if err != nil {
+		log.Fatal(err)
 	}
 }
 
