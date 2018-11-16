@@ -71,34 +71,63 @@ func main() {
 
 	fmt.Println("Press Ctrl+C to exit")
 
+	var conn *net.UDPConn
 	switch c.Mode {
 	case "multicast":
-		log.Fatal("Not implemented yet")
+		conn, err = configMulticast(c.MulticastAddr, c.Port)
 	case "broadcast":
-		runBroadcast(c.Port, appNeedClose)
+		conn, err = configBroadcast(c.Port)
 	default:
 		log.Fatal("Unsupported mode ", c.Mode)
 	}
 
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer conn.Close()
+	runConnection(conn, appNeedClose)
+
 	fmt.Println("Bye")
 }
 
-func runBroadcast(port int, exitDetect chan os.Signal) {
+func configBroadcast(port int) (conn *net.UDPConn, err error) {
 	fmt.Println("Broadcast mode was selected. Working on port", port)
 
 	udpaddr := net.UDPAddr{
 		IP:   net.ParseIP(allAddr),
 		Port: port,
 	}
-	conn, err := net.ListenUDP(udpNet, &udpaddr)
+	conn, err = net.ListenUDP(udpNet, &udpaddr)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	defer conn.Close()
 	sendIf.sendIP = getIPBroadcast(sendIf.ip, sendIf.mask)
 	sendIf.sendPort = port
 
+	return
+}
+
+func configMulticast(addr string, port int) (conn *net.UDPConn, err error) {
+	fmt.Printf("Milticast mode was selected. Working on %s:%d\n", addr, port)
+
+	udpaddr := net.UDPAddr{
+		IP:   net.ParseIP(addr),
+		Port: port,
+	}
+	conn, err = net.ListenMulticastUDP(udpNet, &sendIf.iface, &udpaddr)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	sendIf.sendIP = net.ParseIP(addr)
+	sendIf.sendPort = port
+
+	return
+}
+
+func runConnection(conn *net.UDPConn, exitDetect chan os.Signal) {
 	var wg sync.WaitGroup
 	wg.Add(2)
 

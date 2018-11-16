@@ -1,0 +1,6 @@
+{
+	"mode": "multicast",
+	"hw_mac" : "A4-34-D9-45-50-74",
+	"multicast_addr" : "232.0.0.27",
+	"net_port": 27001
+}
