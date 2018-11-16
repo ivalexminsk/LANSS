@@ -27,8 +27,7 @@ const (
 	protoMessage byte = 'm'
 )
 
-// used to send & recv in broadcast mode
-var bcastPort int
+//interface to work with
 var sendIf ifInfo
 
 func main() {
@@ -87,7 +86,8 @@ func runBroadcast(port int, exitDetect chan os.Signal) {
 	}
 
 	defer conn.Close()
-	bcastPort = port
+	sendIf.sendIP = getIPBroadcast(sendIf.ip, sendIf.mask)
+	sendIf.sendPort = port
 
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -169,17 +169,17 @@ func asyncConsoleRead(readInfo chan string) {
 }
 
 type ifInfo struct {
-	ip    net.IP
-	mask  net.IPMask
-	iface net.Interface
+	ip       net.IP
+	mask     net.IPMask
+	iface    net.Interface
+	sendIP   net.IP
+	sendPort int
 }
 
 func sendRaw(conn *net.UDPConn, bs []byte) {
-	bcIP := getIPBroadcast(sendIf.ip, sendIf.mask)
-
 	udpaddr := net.UDPAddr{
-		IP:   bcIP,
-		Port: bcastPort,
+		IP:   sendIf.sendIP,
+		Port: sendIf.sendPort,
 	}
 
 	conn.WriteToUDP(bs, &udpaddr)
@@ -201,6 +201,10 @@ func sendMessage(conn *net.UDPConn, mess string) {
 
 func parsePrintRecv(recv []byte, src net.Addr) {
 	if len(recv) < 1 {
+		return
+	}
+
+	if isIPEqual(sendIf.ip, src) {
 		return
 	}
 
@@ -307,4 +311,12 @@ iface_start:
 	}
 
 	return
+}
+
+func isIPEqual(ip1 net.IP, ip2 net.Addr) bool {
+	switch casted := ip2.(type) {
+	case *net.UDPAddr:
+		return ip1.Equal(casted.IP)
+	}
+	return false
 }
