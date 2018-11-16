@@ -19,12 +19,17 @@ const allAddr = "0.0.0.0"
 const recvBuff = 2048
 const recvTimeout = time.Second * 1
 const consoleReadLineBuffSize = 3
-const inputDelim = '\n'
+const inputCommandDelim = ' '
+const inputEndlDelim = '\n'
 
 const (
 	protoConn    byte = 'c'
 	protoDisconn byte = 'd'
 	protoMessage byte = 'm'
+)
+
+const (
+	userMessage string = "send"
 )
 
 //interface to work with
@@ -141,30 +146,50 @@ func asyncRecvEcho(conn *net.UDPConn, exitDetect chan bool, wg *sync.WaitGroup) 
 	}
 }
 
+type inputInfo struct {
+	command string
+	params  string
+}
+
 func asyncUserInput(conn *net.UDPConn, exitDetect chan bool, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	readChan := make(chan string, consoleReadLineBuffSize)
+	readChan := make(chan inputInfo, consoleReadLineBuffSize)
 	go asyncConsoleRead(readChan)
 
 	for {
 		select {
 		case <-exitDetect:
 			return
-		case s := <-readChan:
-			sendMessage(conn, s)
+		case info := <-readChan:
+			switch info.command {
+			case userMessage:
+				sendMessage(conn, info.params)
+			default:
+				fmt.Printf("Command '%s' is not supported yet(\n", info.command)
+			}
 		}
 	}
 }
 
-func asyncConsoleRead(readInfo chan string) {
+func asyncConsoleRead(readInfo chan inputInfo) {
 	reader := bufio.NewReader(os.Stdin)
 	for {
-		str, err := reader.ReadString(inputDelim)
+		var c string
+		_, err := fmt.Scan(&c)
 		if err != nil {
 			log.Fatal(err)
 		}
-		readInfo <- str
+
+		str, err := reader.ReadString(inputEndlDelim)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		readInfo <- inputInfo{
+			command: c,
+			params:  str,
+		}
 	}
 }
 
