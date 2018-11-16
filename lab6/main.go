@@ -284,6 +284,9 @@ func detectOtherClients(conn *net.UDPConn) {
 	for _, c := range currentClients {
 		fmt.Println(c.ip)
 	}
+	if len(currentClients) == 0 {
+		fmt.Println("No clients")
+	}
 }
 
 func selfExit() {
