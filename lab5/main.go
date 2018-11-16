@@ -366,8 +366,6 @@ func runTraceroute(addr string, appNeedClose chan os.Signal) {
 	fmt.Printf("Traceroute %v (%s)\n", dstNet.IP, addr)
 
 	rb := make([]byte, ethMaxFrameLen)
-	// ticker := time.NewTicker(tracePeriod)
-	// var rtt []time.Duration
 
 	for i := 1; i <= traceMaxHops; i++ {
 		select {

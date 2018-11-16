@@ -35,10 +35,14 @@ const (
 	userMessage            string = "send"
 	userDetectOtherClients string = "other"
 	userExit               string = "exit"
+	userIgnore             string = "ignore"
 )
 
 //interface to work with
 var sendIf ifInfo
+
+//ignore
+var isIgnoreMe bool
 
 func main() {
 	type Config struct {
@@ -203,6 +207,8 @@ func asyncUserInput(conn *net.UDPConn, exitDetect chan bool, wg *sync.WaitGroup)
 				detectOtherClients(conn)
 			case userExit:
 				selfExit()
+			case userIgnore:
+				selfIgnore()
 			default:
 				fmt.Printf("Command '%s' is not supported yet(\n", info.command)
 			}
@@ -261,6 +267,10 @@ func sendEchoReply(conn *net.UDPConn) {
 }
 
 func sendMessage(conn *net.UDPConn, mess string) {
+	if isIgnoreMe {
+		return
+	}
+
 	toSend := []byte{protoMessage}
 	toSend = append(toSend, []byte(mess)...)
 	sendRaw(conn, toSend)
@@ -299,6 +309,15 @@ func selfExit() {
 	err = p.Signal(os.Interrupt)
 	if err != nil {
 		log.Fatal(err)
+	}
+}
+
+func selfIgnore() {
+	isIgnoreMe = !isIgnoreMe
+	if isIgnoreMe {
+		fmt.Println("Your messages will be ignored")
+	} else {
+		fmt.Println("Your messages will be shown to other")
 	}
 }
 
