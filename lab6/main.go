@@ -21,15 +21,19 @@ const recvTimeout = time.Second * 1
 const consoleReadLineBuffSize = 3
 const inputCommandDelim = ' '
 const inputEndlDelim = '\n'
+const detectOtherTimeout = time.Second * 1
 
 const (
-	protoConn    byte = 'c'
-	protoDisconn byte = 'd'
-	protoMessage byte = 'm'
+	protoConn      byte = 'c'
+	protoDisconn   byte = 'd'
+	protoMessage   byte = 'm'
+	protoEcho      byte = 'e'
+	protoEchoReply byte = 'r'
 )
 
 const (
-	userMessage string = "send"
+	userMessage            string = "send"
+	userDetectOtherClients string = "other"
 )
 
 //interface to work with
@@ -141,7 +145,7 @@ func asyncRecvEcho(conn *net.UDPConn, exitDetect chan bool, wg *sync.WaitGroup) 
 				log.Fatal(err)
 			}
 
-			parsePrintRecv(buff[:n], src)
+			parsePrintRecv(buff[:n], src, conn)
 		}
 	}
 }
@@ -165,6 +169,8 @@ func asyncUserInput(conn *net.UDPConn, exitDetect chan bool, wg *sync.WaitGroup)
 			switch info.command {
 			case userMessage:
 				sendMessage(conn, info.params)
+			case userDetectOtherClients:
+				detectOtherClients(conn)
 			default:
 				fmt.Printf("Command '%s' is not supported yet(\n", info.command)
 			}
@@ -218,13 +224,37 @@ func sendDisconn(conn *net.UDPConn) {
 	sendRaw(conn, []byte{protoDisconn})
 }
 
+func sendEchoReply(conn *net.UDPConn) {
+	sendRaw(conn, []byte{protoEchoReply})
+}
+
 func sendMessage(conn *net.UDPConn, mess string) {
 	toSend := []byte{protoMessage}
 	toSend = append(toSend, []byte(mess)...)
 	sendRaw(conn, toSend)
 }
 
-func parsePrintRecv(recv []byte, src net.Addr) {
+type client struct {
+	ip net.Addr
+}
+
+var currentClients []client
+
+func detectOtherClients(conn *net.UDPConn) {
+	//clear prev clients
+	currentClients = make([]client, 0)
+
+	sendRaw(conn, []byte{protoEcho})
+
+	time.Sleep(detectOtherTimeout)
+
+	fmt.Println("Other clients:")
+	for _, c := range currentClients {
+		fmt.Println(c.ip)
+	}
+}
+
+func parsePrintRecv(recv []byte, src net.Addr, conn *net.UDPConn) {
 	if len(recv) < 1 {
 		return
 	}
@@ -241,6 +271,12 @@ func parsePrintRecv(recv []byte, src net.Addr) {
 		log.Println("Disconnected:", src)
 	case protoMessage:
 		log.Printf("From %v: %s", src, string(recv[1:]))
+	case protoEcho:
+		sendEchoReply(conn)
+	case protoEchoReply:
+		currentClients = append(currentClients, client{
+			ip: src,
+		})
 	default:
 		log.Println("Unknown packet key:", control)
 	}
